@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect 2.0 - Vibe & Code Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                        dark: {
+                            bg: '#070a12',
+                            panel: '#0d1322',
+                            card: '#121a2d',
+                            border: '#1f2d48',
+                            hover: '#1a263e'
+                        },
+                        accent: {
+                            cyan: '#06b6d4',
+                            purple: '#a855f7',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #070a12; }
+        ::-webkit-scrollbar-thumb { background: #1f2d48; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+        .glass-panel {
+            background: rgba(13, 19, 34, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .lens-glow-canvas { box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.35); }
+        .lens-glow-hybrid { box-shadow: 0 0 20px -3px rgba(168, 85, 247, 0.35); }
+        .lens-glow-code { box-shadow: 0 0 20px -3px rgba(99, 102, 241, 0.35); }
+
+        .gradient-border {
+            position: relative;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.4), rgba(6, 182, 212, 0.4));
+            padding: 1px;
+        }
+
+        .gradient-border-inner {
+            background: #0d1322;
+            border-radius: calc(0.75rem - 1px);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        .animate-pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor-blink { animation: blink 0.8s step-end infinite; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);   opacity: 1; }
+        }
+        .slide-in-right { animation: slideInRight 0.25s ease-out forwards; }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(12px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+
+        .toast-enter { animation: fadeInUp 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-200 font-sans h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 0: AUTHENTICATION -->
+    <!-- ========================================================================= -->
+    <div id="screen-auth" class="screen-view fixed inset-0 z-50 bg-dark-bg flex items-center justify-center p-6 overflow-y-auto">
+        <div class="max-w-md w-full space-y-6 my-auto fade-in-up">
+            <!-- Brand -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center space-x-2 bg-dark-card px-4 py-2 rounded-full border border-dark-border">
+                    <div class="w-6 h-6 rounded-md bg-gradient-to-tr from-accent-purple via-brand-500 to-accent-cyan flex items-center justify-center">
+                        <i class="fa-solid fa-layer-group text-white text-[10px]"></i>
+                    </div>
+                    <span class="font-bold text-sm text-white">Architect <span class="text-xs px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-500 border border-brand-500/30">2.0</span></span>
+                </div>
+                <h1 class="text-2xl font-extrabold text-white">Welcome back</h1>
+                <p class="text-xs text-gray-400">Sign in to your workspace or create a new account.</p>
+            </div>
+
+            <!-- Auth Card -->
+            <div class="bg-dark-card border border-dark-border rounded-2xl p-6 space-y-4 shadow-2xl">
+                <!-- Google OAuth -->
+                <button onclick="authWithGoogle()" class="w-full flex items-center justify-center space-x-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold text-sm py-2.5 rounded-xl transition shadow">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    <span>Continue with Google</span>
+                </button>
+
+                <div class="flex items-center space-x-3">
+                    <div class="flex-1 h-px bg-dark-border"></div>
+                    <span class="text-[11px] text-gray-500">or</span>
+                    <div class="flex-1 h-px bg-dark-border"></div>
+                </div>
+
+                <!-- Auth Tabs -->
+                <div class="flex bg-dark-bg rounded-xl p-1 border border-dark-border">
+                    <button onclick="switchAuthTab('signin')" id="tab-signin" class="auth-tab flex-1 py-1.5 rounded-lg text-xs font-semibold transition bg-dark-card text-white">Sign In</button>
+                    <button onclick="switchAuthTab('signup')" id="tab-signup" class="auth-tab flex-1 py-1.5 rounded-lg text-xs font-semibold transition text-gray-400">Sign Up</button>
+                </div>
+
+                <!-- Sign In Form -->
+                <div id="form-signin" class="space-y-3">
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">Email</label>
+                        <input type="email" placeholder="you@company.com" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">Password</label>
+                        <input type="password" placeholder="••••••••" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                    </div>
+                    <div class="flex justify-end">
+                        <span class="text-[11px] text-brand-500 cursor-pointer hover:underline">Forgot password?</span>
+                    </div>
+                    <button onclick="proceedToOnboarding()" class="w-full py-2.5 bg-gradient-to-r from-brand-600 to-accent-purple hover:opacity-90 text-white font-semibold text-xs rounded-xl shadow-lg transition">Sign In</button>
+                </div>
+
+                <!-- Sign Up Form -->
+                <div id="form-signup" class="space-y-3 hidden">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] text-gray-400 block mb-1">First Name</label>
+                            <input type="text" placeholder="Alex" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-gray-400 block mb-1">Last Name</label>
+                            <input type="text" placeholder="Dev" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">Work Email</label>
+                        <input type="email" placeholder="you@company.com" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">Password</label>
+                        <input type="password" placeholder="Min. 8 characters" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500 transition">
+                    </div>
+                    <button onclick="proceedToOnboarding()" class="w-full py-2.5 bg-gradient-to-r from-brand-600 to-accent-purple hover:opacity-90 text-white font-semibold text-xs rounded-xl shadow-lg transition">Create Account</button>
+                </div>
+            </div>
+
+            <p class="text-center text-[11px] text-gray-500">By continuing you agree to our <span class="text-brand-500 cursor-pointer hover:underline">Terms</span> and <span class="text-brand-500 cursor-pointer hover:underline">Privacy Policy</span>.</p>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 1: ONBOARDING PERSONA SELECTOR -->
+    <!-- ========================================================================= -->
+    <div id="screen-onboarding" class="screen-view fixed inset-0 z-50 bg-dark-bg flex items-center justify-center p-6 overflow-y-auto">
+        <div class="max-w-4xl w-full space-y-8 my-auto">
+            <!-- Header Brand -->
+            <div class="text-center space-y-3">
+                <div class="inline-flex items-center space-x-3 bg-dark-card/80 px-4 py-2 rounded-full border border-dark-border shadow-lg">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-accent-purple via-brand-500 to-accent-cyan flex items-center justify-center">
+                        <i class="fa-solid fa-layer-group text-white text-xs"></i>
+                    </div>
+                    <span class="font-bold text-sm tracking-tight text-white">Architect <span class="text-xs px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-500 border border-brand-500/30">2.0</span></span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white">Choose Your Building Style</h1>
+                <p class="text-sm md:text-base text-gray-400 max-w-lg mx-auto">Architect 2.0 caters to both non-technical founders and seasoned engineers. You can switch modes anytime.</p>
+            </div>
+
+            <!-- Persona Selection Grid -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Option 1: Vibe & Prompt (Non-Tech) -->
+                <div onclick="selectPersona('vibe')" class="gradient-border group cursor-pointer hover:scale-[1.02] transition-all duration-300">
+                    <div class="gradient-border-inner p-6 md:p-8 h-full flex flex-col justify-between space-y-6">
+                        <div class="space-y-4">
+                            <div class="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan text-xl group-hover:bg-accent-cyan group-hover:text-black transition-colors">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-semibold text-accent-cyan uppercase tracking-wider">Vibe Mode</span>
+                                <h2 class="text-xl font-bold text-white mt-1">"I want to Vibe & Prompt"</h2>
+                                <p class="text-xs text-gray-400 mt-2 leading-relaxed">Ideal for founders and product leads. Build full-stack apps and multi-agent workflows using natural language prompts, visual node graphs, and live web previews.</p>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-2 text-xs text-gray-300">
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-accent-emerald"></i><span>Visual Agent Flow Canvas</span></li>
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-accent-emerald"></i><span>Instant Web App Preview</span></li>
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-accent-emerald"></i><span>Auto-managed DB & Hosting</span></li>
+                        </ul>
+
+                        <button class="w-full py-3 rounded-xl bg-accent-cyan/10 hover:bg-accent-cyan text-accent-cyan hover:text-black font-semibold text-xs border border-accent-cyan/30 transition flex items-center justify-center space-x-2">
+                            <span>Start in Vibe Mode</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Option 2: Architect Developer (Tech) -->
+                <div onclick="selectPersona('code')" class="gradient-border group cursor-pointer hover:scale-[1.02] transition-all duration-300">
+                    <div class="gradient-border-inner p-6 md:p-8 h-full flex flex-col justify-between space-y-6">
+                        <div class="space-y-4">
+                            <div class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500 text-xl group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-terminal"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">Architect Mode</span>
+                                <h2 class="text-xl font-bold text-white mt-1">"I build & write code"</h2>
+                                <p class="text-xs text-gray-400 mt-2 leading-relaxed">Built for software developers. Gain full access to split-pane VS Code editors, embedded terminal drawers, AST constraints, bi-directional Git sync, and raw token traces.</p>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-2 text-xs text-gray-300">
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-brand-500"></i><span>Full IDE & Embedded ZSH Terminal</span></li>
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-brand-500"></i><span>Bi-Directional GitHub Branching</span></li>
+                            <li class="flex items-center space-x-2"><i class="fa-solid fa-check text-brand-500"></i><span>Agent AST Steering & Token Traces</span></li>
+                        </ul>
+
+                        <button class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-brand-500/20">
+                            <span>Start in Architect Mode</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 2: UNIFIED COMMAND DASHBOARD (FIRST SCREEN AFTER LOGIN) -->
+    <!-- ========================================================================= -->
+    <div id="screen-dashboard" class="screen-view hidden flex-1 flex flex-col overflow-y-auto bg-dark-bg">
+        <!-- Top App Navigation -->
+        <header class="h-16 border-b border-dark-border bg-dark-panel/80 px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 backdrop-blur-md">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2.5 cursor-pointer" onclick="showDashboard()">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-accent-purple via-brand-500 to-accent-cyan flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-layer-group text-white text-sm"></i>
+                    </div>
+                    <span class="font-extrabold text-base tracking-tight text-white">Architect <span class="text-xs px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-500 border border-brand-500/30">2.0</span></span>
+                </div>
+            </div>
+
+            <!-- Header Right Menu -->
+            <div class="flex items-center space-x-4">
+                <button onclick="openModal('import-modal')" class="text-xs text-gray-300 hover:text-white bg-dark-card hover:bg-dark-hover px-3 py-1.5 rounded-lg border border-dark-border transition flex items-center space-x-2">
+                    <i class="fa-brands fa-github text-sm"></i>
+                    <span>Connect GitHub</span>
+                </button>
+                
+                <div class="h-5 w-px bg-dark-border"></div>
+
+                <!-- User Profile -->
+                <div class="relative">
+                    <div onclick="toggleAvatarMenu()" class="flex items-center space-x-2 cursor-pointer">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan flex items-center justify-center text-white font-bold text-xs">AD</div>
+                        <span class="text-xs text-gray-300 font-medium hidden sm:inline">Alex Dev</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-gray-400"></i>
+                    </div>
+                    <div id="avatar-menu" class="hidden absolute right-0 top-10 w-44 bg-dark-card border border-dark-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                        <div class="p-1 space-y-0.5">
+                            <button onclick="closeAvatarMenu(); showScreen('screen-settings'); switchSettingsTab('profile')" class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-user w-4 text-brand-500"></i><span>Profile</span></button>
+                            <button onclick="closeAvatarMenu(); showScreen('screen-settings'); switchSettingsTab('models')" class="w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-microchip w-4 text-accent-purple"></i><span>Settings</span></button>
+                            <div class="border-t border-dark-border my-1"></div>
+                            <button onclick="closeAvatarMenu(); showScreen('screen-auth')" class="w-full text-left px-3 py-2 rounded-lg text-xs text-accent-rose hover:bg-accent-rose/10 transition flex items-center space-x-2"><i class="fa-solid fa-right-from-bracket w-4"></i><span>Sign Out</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content Container -->
+        <main class="max-w-6xl w-full mx-auto p-6 md:p-10 space-y-10">
+            <!-- Hero Omni-Prompt Section -->
+            <div class="space-y-4 text-center max-w-3xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">What are we building today?</h1>
+                <p class="text-xs md:text-sm text-gray-400">Describe an AI app, import a repo, or pick a framework to synthesize an autonomous agent swarm.</p>
+
+                <!-- Omni-Prompt Box -->
+                <div class="glass-panel p-2 rounded-2xl border border-dark-border shadow-2xl space-y-2">
+                    <div class="flex items-center space-x-2 px-3 py-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-accent-purple text-lg"></i>
+                        <input id="dashboard-prompt" type="text" placeholder="e.g. Build an autonomous arXiv paper summarizer that posts summaries to Discord..." 
+                               class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-500">
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-dark-border px-2">
+                        <!-- Framework Selector -->
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[11px] text-gray-400 font-medium"><i class="fa-solid fa-cubes text-accent-cyan mr-1"></i> Agent Framework:</span>
+                            <select id="framework-selector" class="bg-dark-card text-xs text-white border border-dark-border rounded-lg px-2.5 py-1.5 focus:border-brand-500 outline-none">
+                                <option value="langgraph">LangGraph (Multi-Agent State)</option>
+                                <option value="crewai">CrewAI (Role-Based Swarms)</option>
+                                <option value="pydanticai">PydanticAI (Production Type-Safe)</option>
+                                <option value="autogen">AutoGen (Conversational)</option>
+                                <option value="custom">Custom Agent Runtime</option>
+                            </select>
+                        </div>
+
+                        <button onclick="launchNewProjectFromPrompt()" class="bg-gradient-to-r from-brand-600 via-accent-purple to-accent-cyan hover:opacity-90 text-white font-semibold text-xs px-5 py-2 rounded-xl shadow-lg transition flex items-center space-x-2">
+                            <span>Synthesize App</span>
+                            <i class="fa-solid fa-bolt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div onclick="openModal('import-modal')" class="bg-dark-card hover:bg-dark-hover p-4 rounded-xl border border-dark-border transition cursor-pointer flex items-center space-x-4 group">
+                    <div class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-white text-lg group-hover:border-accent-cyan transition">
+                        <i class="fa-brands fa-github"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-white">Import GitHub Repo</h3>
+                        <p class="text-[11px] text-gray-400">Bring existing code into Architect</p>
+                    </div>
+                </div>
+
+                <div onclick="showScreen('screen-templates')" class="bg-dark-card hover:bg-dark-hover p-4 rounded-xl border border-dark-border transition cursor-pointer flex items-center space-x-4 group">
+                    <div class="w-10 h-10 rounded-lg bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center text-accent-purple text-lg group-hover:border-accent-purple transition">
+                        <i class="fa-solid fa-clone"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-white">Clone Starter Template</h3>
+                        <p class="text-[11px] text-gray-400">RAG, Autonomous Search, or Chatbots</p>
+                    </div>
+                </div>
+
+                <div onclick="launchTemplate('Custom Swarm')" class="bg-dark-card hover:bg-dark-hover p-4 rounded-xl border border-dark-border transition cursor-pointer flex items-center space-x-4 group">
+                    <div class="w-10 h-10 rounded-lg bg-accent-emerald/10 border border-accent-emerald/30 flex items-center justify-center text-accent-emerald text-lg group-hover:border-accent-emerald transition">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-white">Custom Agent Builder</h3>
+                        <p class="text-[11px] text-gray-400">Blank canvas orchestration</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Projects Section -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-brand-500"></i>
+                        <span>Recent Workspaces</span>
+                    </h2>
+                    <span class="text-xs text-gray-400">3 Active Projects</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Project Card 1 -->
+                    <div onclick="openWorkspace('AI Compliance Auditor', 'canvas')" class="bg-dark-card border border-dark-border hover:border-accent-cyan/50 rounded-2xl p-5 transition cursor-pointer flex flex-col justify-between space-y-4 group">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-semibold text-white group-hover:text-accent-cyan transition flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-accent-emerald"></span>
+                                    AI Compliance Auditor
+                                </span>
+                                <span class="text-[10px] bg-accent-cyan/10 text-accent-cyan px-2 py-0.5 rounded border border-accent-cyan/20">LangGraph</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 line-clamp-2">Autonomous HIPAA/GDPR document auditing agent swarm with real-time vector checks.</p>
+                        </div>
+
+                        <div class="space-y-3 pt-3 border-t border-dark-border text-[10px] text-gray-400">
+                            <div class="flex justify-between items-center">
+                                <span>Git Branch: <strong class="text-gray-200">main</strong></span>
+                                <span class="text-accent-emerald"><i class="fa-solid fa-check-double mr-1"></i>Synced</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Token Usage: <strong class="text-gray-200">14.2k tokens</strong></span>
+                                <span class="text-gray-500">2 mins ago</span>
+                            </div>
+
+                            <div class="flex gap-2 pt-1">
+                                <button class="flex-1 py-1.5 bg-dark-panel hover:bg-dark-hover rounded text-xs text-gray-300 border border-dark-border">Open Canvas</button>
+                                <button class="flex-1 py-1.5 bg-brand-600/20 hover:bg-brand-600 text-brand-500 hover:text-white rounded text-xs border border-brand-500/30 transition">Code Mode</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project Card 2 -->
+                    <div onclick="openWorkspace('arXiv Research Agent', 'code')" class="bg-dark-card border border-dark-border hover:border-brand-500/50 rounded-2xl p-5 transition cursor-pointer flex flex-col justify-between space-y-4 group">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-semibold text-white group-hover:text-brand-500 transition flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-accent-emerald"></span>
+                                    arXiv Research Agent
+                                </span>
+                                <span class="text-[10px] bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded border border-brand-500/20">CrewAI</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 line-clamp-2">Scrapes daily AI research papers, summarizes key methodology, and posts to Discord.</p>
+                        </div>
+
+                        <div class="space-y-3 pt-3 border-t border-dark-border text-[10px] text-gray-400">
+                            <div class="flex justify-between items-center">
+                                <span>Git Branch: <strong class="text-gray-200">feature/crew-fix</strong></span>
+                                <span class="text-accent-amber"><i class="fa-solid fa-code-commit mr-1"></i>1 Uncommitted</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Token Usage: <strong class="text-gray-200">82.5k tokens</strong></span>
+                                <span class="text-gray-500">1 hour ago</span>
+                            </div>
+
+                            <div class="flex gap-2 pt-1">
+                                <button class="flex-1 py-1.5 bg-dark-panel hover:bg-dark-hover rounded text-xs text-gray-300 border border-dark-border">Open Canvas</button>
+                                <button class="flex-1 py-1.5 bg-brand-600/20 hover:bg-brand-600 text-brand-500 hover:text-white rounded text-xs border border-brand-500/30 transition">Code Mode</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project Card 3 -->
+                    <div onclick="openWorkspace('PDF Query Engine', 'hybrid')" class="bg-dark-card border border-dark-border hover:border-accent-purple/50 rounded-2xl p-5 transition cursor-pointer flex flex-col justify-between space-y-4 group">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-semibold text-white group-hover:text-accent-purple transition flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-accent-emerald"></span>
+                                    PDF Query Engine
+                                </span>
+                                <span class="text-[10px] bg-accent-purple/10 text-accent-purple px-2 py-0.5 rounded border border-accent-purple/20">PydanticAI</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 line-clamp-2">Fast vector extraction and question answering for large corporate PDF contracts.</p>
+                        </div>
+
+                        <div class="space-y-3 pt-3 border-t border-dark-border text-[10px] text-gray-400">
+                            <div class="flex justify-between items-center">
+                                <span>Git Branch: <strong class="text-gray-200">main</strong></span>
+                                <span class="text-accent-emerald"><i class="fa-solid fa-check-double mr-1"></i>Synced</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>Token Usage: <strong class="text-gray-200">3.1k tokens</strong></span>
+                                <span class="text-gray-500">Yesterday</span>
+                            </div>
+
+                            <div class="flex gap-2 pt-1">
+                                <button class="flex-1 py-1.5 bg-dark-panel hover:bg-dark-hover rounded text-xs text-gray-300 border border-dark-border">Open Canvas</button>
+                                <button class="flex-1 py-1.5 bg-brand-600/20 hover:bg-brand-600 text-brand-500 hover:text-white rounded text-xs border border-brand-500/30 transition">Code Mode</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 3: FULL DUAL-LENS WORKSPACE (IDE / BUILDER SCREEN) -->
+    <!-- ========================================================================= -->
+    <div id="screen-workspace" class="screen-view hidden flex-1 flex flex-col overflow-hidden bg-dark-bg">
+        <!-- TOP NAVIGATION & DUAL-LENS SWITCHER -->
+        <header class="h-14 border-b border-dark-border bg-dark-panel px-4 flex items-center justify-between z-30 shrink-0">
+            <!-- Brand & Project Breadcrumb -->
+            <div class="flex items-center space-x-3">
+                <button onclick="showDashboard()" class="text-gray-400 hover:text-white transition text-xs">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Hub
+                </button>
+                <div class="h-4 w-px bg-dark-border"></div>
+                <div class="flex items-center space-x-2">
+                    <span id="workspace-title" class="font-bold text-xs text-white">AI Compliance Auditor</span>
+                    <span class="text-[10px] bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 px-1.5 py-0.2 rounded">Live</span>
+                </div>
+            </div>
+
+            <!-- CENTRAL DUAL-LENS SWITCHER CONTROL -->
+            <div class="flex items-center bg-dark-bg p-1 rounded-xl border border-dark-border shadow-inner">
+                <button onclick="setLens('canvas')" id="btn-lens-canvas" class="lens-btn flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-palette text-accent-cyan"></i>
+                    <span class="hidden sm:inline">Canvas Lens</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-dark-card text-gray-400 border border-dark-border">Vibe</span>
+                </button>
+                <button onclick="setLens('hybrid')" id="btn-lens-hybrid" class="lens-btn flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-arrows-split-up-and-left text-accent-purple"></i>
+                    <span class="hidden sm:inline">Hybrid Lens</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-dark-card text-gray-400 border border-dark-border">Co-Create</span>
+                </button>
+                <button onclick="setLens('code')" id="btn-lens-code" class="lens-btn flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-code text-brand-500"></i>
+                    <span class="hidden sm:inline">Code Lens</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-dark-card text-gray-400 border border-dark-border">Dev</span>
+                </button>
+            </div>
+
+            <!-- Right Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- Model Selector -->
+                <div class="relative">
+                    <button onclick="toggleModelDropdown()" id="model-selector-btn" class="flex items-center space-x-2 bg-dark-card border border-dark-border hover:border-accent-purple/50 px-3 py-1.5 rounded-lg text-xs text-white transition">
+                        <i class="fa-solid fa-microchip text-accent-purple text-[11px]"></i>
+                        <span id="active-model-label">Claude 3.5</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-gray-400"></i>
+                    </button>
+                    <div id="model-dropdown" class="hidden absolute right-0 top-9 w-52 bg-dark-card border border-dark-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                        <div class="p-1 space-y-0.5">
+                            <button onclick="selectModel('Claude 3.5', 'claude-3-5-sonnet')" class="model-opt w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-fire text-orange-400 w-4"></i><span>Claude 3.5 Sonnet</span></button>
+                            <button onclick="selectModel('GPT-4o', 'gpt-4o')" class="model-opt w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-brain text-green-400 w-4"></i><span>GPT-4o</span></button>
+                            <button onclick="selectModel('Gemini 1.5', 'gemini-1.5-pro')" class="model-opt w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-gem text-blue-400 w-4"></i><span>Gemini 1.5 Pro</span></button>
+                            <button onclick="selectModel('Llama 3.1', 'llama-3.1-70b')" class="model-opt w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-cube text-purple-400 w-4"></i><span>Llama 3.1 70B</span></button>
+                            <div class="border-t border-dark-border my-1"></div>
+                            <button onclick="selectModel('Custom', 'custom')" class="model-opt w-full text-left px-3 py-2 rounded-lg text-xs text-gray-300 hover:bg-dark-hover hover:text-white transition flex items-center space-x-2"><i class="fa-solid fa-plug text-gray-400 w-4"></i><span>Custom Endpoint</span></button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="openModal('deploy-modal')" class="bg-gradient-to-r from-brand-600 to-accent-purple hover:opacity-90 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-md transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span>Deploy</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- NODE CONFIG SLIDE-IN PANEL -->
+        <div id="node-config-panel" class="hidden fixed right-0 top-14 h-[calc(100%-3.5rem)] w-80 bg-dark-panel border-l border-dark-border z-40 flex flex-col slide-in-right shadow-2xl">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-dark-border">
+                <span class="text-xs font-bold text-white"><i class="fa-solid fa-sliders text-accent-cyan mr-1.5"></i> Node Config</span>
+                <button onclick="closeNodeConfig()" class="text-gray-500 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-1">Node Name</label>
+                    <input id="node-name-input" value="Compliance Evaluator" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan">
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-1">System Prompt</label>
+                    <textarea rows="5" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan resize-none">You are a compliance expert. Evaluate the provided document against HIPAA and GDPR regulations. Return a structured JSON report with violations, severity, and remediation steps.</textarea>
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-2">Tools</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked class="accent-accent-cyan"><span class="text-xs text-gray-300">web_search</span></label>
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked class="accent-accent-cyan"><span class="text-xs text-gray-300">vector_store_query</span></label>
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" class="accent-accent-cyan"><span class="text-xs text-gray-300">send_email</span></label>
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" class="accent-accent-cyan"><span class="text-xs text-gray-300">write_file</span></label>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-2">Memory</label>
+                    <div class="flex items-center justify-between bg-dark-card border border-dark-border rounded-xl p-3">
+                        <span class="text-xs text-gray-300">Enable short-term memory</span>
+                        <div id="memory-toggle" onclick="this.classList.toggle('bg-brand-600'); this.classList.toggle('bg-dark-bg')" class="w-9 h-5 bg-brand-600 rounded-full cursor-pointer transition relative"><div class="w-4 h-4 bg-white rounded-full absolute top-0.5 right-0.5"></div></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 block mb-1">Max Retries on Error</label>
+                    <select class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+                        <option>3</option><option>5</option><option>10</option><option>0 (no retry)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 border-t border-dark-border">
+                <button onclick="saveNodeConfig()" class="w-full py-2 bg-accent-cyan/10 hover:bg-accent-cyan text-accent-cyan hover:text-black text-xs font-semibold rounded-xl border border-accent-cyan/30 transition">Save Node</button>
+            </div>
+        </div>
+
+        <!-- WORKSPACE CONTENT AREA -->
+        <div class="flex-1 flex overflow-hidden relative">
+
+            <!-- LENS 1: CANVAS VIEW (VIBE MODE) -->
+            <div id="lens-canvas-view" class="lens-view w-full h-full flex flex-col lg:flex-row">
+                <!-- Left: Visual Node Flow -->
+                <div class="w-full lg:w-80 border-r border-dark-border bg-dark-panel/60 p-4 flex flex-col shrink-0">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-diagram-project mr-1.5 text-accent-cyan"></i> Agent Nodes</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 px-2 py-0.5 rounded-full">4 Active</span>
+                            <button onclick="openNodeConfig('New Node')" class="w-6 h-6 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan hover:bg-accent-cyan hover:text-black transition text-xs"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 space-y-3 overflow-y-auto pr-1">
+                        <div onclick="openNodeConfig('Trigger: PDF Drop')" class="p-3 rounded-xl border border-dark-border bg-dark-card/90 hover:border-accent-cyan/50 transition cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-accent-emerald"></span>
+                            </div>
+                            <p class="text-[11px] text-gray-400">Listens for user document upload in UI</p>
+                        </div>
+
+                        <div onclick="openNodeConfig('Document Parser')" class="p-3 rounded-xl border border-dark-border bg-dark-card/90 hover:border-accent-cyan/50 transition cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-accent-emerald"></span>
+                            </div>
+                            <p class="text-[11px] text-gray-400">Extracts text via PyPDF2</p>
+                        </div>
+
+                        <div onclick="openNodeConfig('Compliance Evaluator')" class="p-3 rounded-xl border border-accent-cyan/40 bg-accent-cyan/5 transition cursor-pointer">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-semibold text-accent-cyan flex items-center gap-1.5"><i class="fa-solid fa-brain"></i> Compliance Evaluator</span>
+                                <span class="text-[10px] bg-accent-cyan/20 text-accent-cyan px-1.5 rounded">Active</span>
+                            </div>
+                            <p class="text-[11px] text-gray-300">Evaluates HIPAA criteria</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Web App Live Preview -->
+                <div class="flex-1 bg-dark-bg p-4 flex flex-col">
+                    <div class="h-8 bg-dark-card/80 rounded-t-xl border border-dark-border px-3 flex items-center justify-between shrink-0">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+                            <span class="text-[11px] text-gray-400 ml-2 font-mono">https://ai-compliance-preview.architect.app</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-gradient-to-b from-gray-950 to-dark-bg border-x border-b border-dark-border rounded-b-xl p-6 overflow-y-auto flex flex-col items-center justify-center">
+                        <div class="max-w-md w-full glass-panel rounded-2xl p-6 border border-dark-border text-center space-y-5">
+                            <div class="w-12 h-12 bg-accent-cyan/10 rounded-2xl flex items-center justify-center mx-auto text-accent-cyan text-xl border border-accent-cyan/20">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-white">AI Compliance Auditor</h2>
+                                <p class="text-xs text-gray-400 mt-1">Upload records for instant rule violation scan.</p>
+                            </div>
+                            <div class="border-2 border-dashed border-dark-border hover:border-accent-cyan/60 rounded-xl p-6 bg-dark-card/40 transition cursor-pointer">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-500 mb-2"></i>
+                                <p class="text-xs font-medium text-gray-300">Drag & drop files here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Prompt Chat Assistant -->
+                <div class="w-full lg:w-80 border-l border-dark-border bg-dark-panel/50 p-4 flex flex-col shrink-0">
+                    <span class="text-xs font-semibold text-white pb-2 border-b border-dark-border mb-3"><i class="fa-solid fa-wand-magic-sparkles text-accent-purple mr-1.5"></i> Vibe Assistant</span>
+                    
+                    <div id="canvas-chat-box" class="flex-1 overflow-y-auto space-y-3 text-xs mb-3 pr-1">
+                        <div class="bg-dark-bg p-3 rounded-xl border border-dark-border space-y-1">
+                            <span class="font-bold text-accent-purple text-[10px]">Architect AI</span>
+                            <p class="text-gray-300">Compliance agent pipeline ready! What updates should we make?</p>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <input id="canvas-prompt-input" type="text" placeholder="Prompt changes..." 
+                               class="w-full bg-dark-bg text-xs text-white rounded-xl pl-3 pr-9 py-2 border border-dark-border focus:border-accent-purple outline-none">
+                        <button onclick="sendCanvasPrompt()" class="absolute right-2 top-2 text-accent-purple p-0.5">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LENS 2: HYBRID VIEW (CO-CREATION MODE) -->
+            <div id="lens-hybrid-view" class="lens-view hidden w-full h-full flex flex-col lg:flex-row">
+                <div class="w-full lg:w-80 border-r border-dark-border bg-dark-panel p-3 flex flex-col shrink-0 space-y-3">
+                    <span class="text-xs font-semibold text-gray-400"><i class="fa-solid fa-boxes-stacked text-accent-purple mr-1"></i> Architecture Bento</span>
+                    <div class="space-y-2">
+                        <div class="bg-dark-card p-3 rounded-xl border border-dark-border">
+                            <span class="text-xs font-bold text-white block">Compliance Agent</span>
+                            <span class="text-[10px] font-mono text-gray-400">src/agents/compliance.py</span>
+                        </div>
+                        <div class="bg-dark-card p-3 rounded-xl border border-dark-border">
+                            <span class="text-xs font-bold text-white block">PDF Parser Utility</span>
+                            <span class="text-[10px] font-mono text-gray-400">src/utils/pdfParser.ts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col border-r border-dark-border">
+                    <div class="h-1/2 bg-dark-bg p-3 border-b border-dark-border flex flex-col">
+                        <span class="text-xs text-gray-400 mb-2"><i class="fa-solid fa-eye text-accent-cyan mr-1"></i> Live Component Preview</span>
+                        <div class="flex-1 bg-dark-card rounded-xl border border-dark-border p-4 flex items-center justify-center">
+                            <button class="px-4 py-2 bg-accent-purple text-white rounded-lg text-xs font-medium">Compliance Widget Active</button>
+                        </div>
+                    </div>
+
+                    <div class="h-1/2 bg-dark-card p-3 font-mono text-xs overflow-y-auto">
+                        <span class="text-xs font-sans text-accent-purple mb-2 block font-medium"><i class="fa-solid fa-file-code mr-1"></i> src/agents/compliance.py</span>
+                        <div class="bg-dark-bg p-3 rounded-lg border border-dark-border text-gray-300">
+                            <div><span class="text-purple-400">from</span> pydantic_ai <span class="text-purple-400">import</span> Agent</div>
+                            <div>compliance_agent = Agent(<span class="text-green-300">'claude-3-5-sonnet'</span>)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LENS 3: CODE VIEW (DEVELOPER MODE) -->
+            <div id="lens-code-view" class="lens-view hidden w-full h-full flex flex-col lg:flex-row">
+                <div class="w-full lg:w-64 border-r border-dark-border bg-dark-bg p-3 flex flex-col shrink-0">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-folder-tree mr-1 text-brand-500"></i> Code Explorer</span>
+                    <div class="text-xs font-mono space-y-1 text-gray-300">
+                        <div>📁 src/</div>
+                        <div class="pl-3 text-brand-500">📄 compliance.py</div>
+                        <div class="pl-3 text-gray-400">📄 router.py</div>
+                        <div>📄 Dockerfile</div>
+                        <div>📄 env.local</div>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col bg-dark-card">
+                    <div class="h-9 bg-dark-bg border-b border-dark-border px-3 flex items-center">
+                        <span class="text-xs font-mono text-brand-500 bg-dark-card px-3 py-1 rounded-t border-t border-brand-500">compliance.py</span>
+                    </div>
+
+                    <div id="code-editor-content" class="flex-1 p-4 font-mono text-xs bg-dark-bg/60 text-gray-200 overflow-y-auto leading-relaxed">
+                        <div><span class="text-purple-400">import</span> os</div>
+                        <div><span class="text-purple-400">from</span> pydantic_ai <span class="text-purple-400">import</span> Agent</div>
+                        <br/>
+                        <div>agent = Agent(model=<span class="text-green-300">'claude-3-5-sonnet'</span>)</div>
+                    </div>
+
+                    <div class="h-40 border-t border-dark-border bg-dark-bg p-3 flex flex-col font-mono text-xs">
+                        <div class="flex justify-between items-center pb-2 border-b border-dark-border text-gray-400">
+                            <span>Terminal (zsh)</span>
+                            <button onclick="runTerminalLogs()" class="px-2 py-0.5 bg-brand-600 text-white rounded text-[10px]">Run Logs</button>
+                        </div>
+                        <div id="terminal-output" class="flex-1 overflow-y-auto mt-2 text-gray-400 space-y-1">
+                            <div><span class="text-accent-emerald">architect-cli</span> v2.0 initialized.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 4: TEMPLATE GALLERY -->
+    <!-- ========================================================================= -->
+    <div id="screen-templates" class="screen-view hidden flex-1 flex flex-col overflow-y-auto bg-dark-bg">
+        <header class="h-16 border-b border-dark-border bg-dark-panel/80 px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 backdrop-blur-md">
+            <div class="flex items-center space-x-3">
+                <button onclick="showDashboard()" class="text-gray-400 hover:text-white transition text-xs"><i class="fa-solid fa-arrow-left mr-1"></i> Back</button>
+                <div class="h-4 w-px bg-dark-border"></div>
+                <span class="font-bold text-sm text-white">Starter Templates</span>
+            </div>
+            <input type="text" placeholder="Search templates..." class="bg-dark-card border border-dark-border rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500 w-56">
+        </header>
+        <main class="max-w-6xl w-full mx-auto p-6 md:p-10 space-y-8">
+            <!-- Category Filters -->
+            <div class="flex flex-wrap gap-2">
+                <button class="px-3 py-1.5 bg-brand-600 text-white text-xs rounded-lg font-medium">All</button>
+                <button class="px-3 py-1.5 bg-dark-card text-gray-400 hover:text-white text-xs rounded-lg border border-dark-border transition">RAG</button>
+                <button class="px-3 py-1.5 bg-dark-card text-gray-400 hover:text-white text-xs rounded-lg border border-dark-border transition">Autonomous</button>
+                <button class="px-3 py-1.5 bg-dark-card text-gray-400 hover:text-white text-xs rounded-lg border border-dark-border transition">Chatbot</button>
+                <button class="px-3 py-1.5 bg-dark-card text-gray-400 hover:text-white text-xs rounded-lg border border-dark-border transition">Data Pipeline</button>
+                <button class="px-3 py-1.5 bg-dark-card text-gray-400 hover:text-white text-xs rounded-lg border border-dark-border transition">Multi-Agent</button>
+            </div>
+            <!-- Template Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Template 1 -->
+                <div class="bg-dark-card border border-dark-border hover:border-accent-cyan/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition group cursor-pointer">
+                    <div class="space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">RAG Pipeline</span>
+                                <span class="text-[10px] bg-accent-cyan/10 text-accent-cyan px-2 py-0.5 rounded border border-accent-cyan/20">LangGraph</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Retrieval-augmented generation over your own documents with vector search and streaming responses.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Python</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">FastAPI</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Pinecone</span>
+                        </div>
+                    </div>
+                    <button onclick="openWorkspace('RAG Pipeline', 'canvas')" class="w-full py-2 bg-accent-cyan/10 hover:bg-accent-cyan text-accent-cyan hover:text-black text-xs font-semibold rounded-xl border border-accent-cyan/30 transition">Use Template</button>
+                </div>
+                <!-- Template 2 -->
+                <div class="bg-dark-card border border-dark-border hover:border-accent-purple/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition group cursor-pointer">
+                    <div class="space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-accent-purple/10 border border-accent-purple/20 flex items-center justify-center text-accent-purple"><i class="fa-solid fa-comments"></i></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">AI Chatbot</span>
+                                <span class="text-[10px] bg-accent-purple/10 text-accent-purple px-2 py-0.5 rounded border border-accent-purple/20">PydanticAI</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Production-ready chatbot with memory, tool use, and multi-turn conversation management.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Python</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Redis</span>
+                        </div>
+                    </div>
+                    <button onclick="openWorkspace('AI Chatbot', 'canvas')" class="w-full py-2 bg-accent-purple/10 hover:bg-accent-purple text-accent-purple hover:text-white text-xs font-semibold rounded-xl border border-accent-purple/30 transition">Use Template</button>
+                </div>
+                <!-- Template 3 -->
+                <div class="bg-dark-card border border-dark-border hover:border-accent-emerald/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition group cursor-pointer">
+                    <div class="space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-accent-emerald/10 border border-accent-emerald/20 flex items-center justify-center text-accent-emerald"><i class="fa-solid fa-robot"></i></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">Autonomous Research</span>
+                                <span class="text-[10px] bg-accent-emerald/10 text-accent-emerald px-2 py-0.5 rounded border border-accent-emerald/20">CrewAI</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Multi-agent swarm that searches the web, synthesizes findings, and generates structured reports.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Python</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Tavily</span>
+                        </div>
+                    </div>
+                    <button onclick="openWorkspace('Autonomous Research', 'canvas')" class="w-full py-2 bg-accent-emerald/10 hover:bg-accent-emerald text-accent-emerald hover:text-black text-xs font-semibold rounded-xl border border-accent-emerald/30 transition">Use Template</button>
+                </div>
+                <!-- Template 4 -->
+                <div class="bg-dark-card border border-dark-border hover:border-accent-amber/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition group cursor-pointer">
+                    <div class="space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center text-accent-amber"><i class="fa-solid fa-database"></i></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">Data Pipeline Agent</span>
+                                <span class="text-[10px] bg-accent-amber/10 text-accent-amber px-2 py-0.5 rounded border border-accent-amber/20">LangGraph</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">ETL agent that ingests, transforms, and loads data across sources with error recovery.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Python</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Postgres</span>
+                        </div>
+                    </div>
+                    <button onclick="openWorkspace('Data Pipeline Agent', 'code')" class="w-full py-2 bg-accent-amber/10 hover:bg-accent-amber text-accent-amber hover:text-black text-xs font-semibold rounded-xl border border-accent-amber/30 transition">Use Template</button>
+                </div>
+                <!-- Template 5 -->
+                <div class="bg-dark-card border border-dark-border hover:border-brand-500/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition group cursor-pointer">
+                    <div class="space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-500"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">PDF Q&A Engine</span>
+                                <span class="text-[10px] bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded border border-brand-500/20">PydanticAI</span>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Upload PDFs and ask questions. Powered by vector embeddings and semantic chunking.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Python</span>
+                            <span class="text-[10px] bg-dark-bg px-2 py-0.5 rounded text-gray-400 border border-dark-border">Weaviate</span>
+                        </div>
+                    </div>
+                    <button onclick="openWorkspace('PDF Q&A Engine', 'hybrid')" class="w-full py-2 bg-brand-600/20 hover:bg-brand-600 text-brand-500 hover:text-white text-xs font-semibold rounded-xl border border-brand-500/30 transition">Use Template</button>
+                </div>
+                <!-- Template 6: Blank -->
+                <div class="bg-dark-card border border-dashed border-dark-border hover:border-gray-500 rounded-2xl p-5 flex flex-col items-center justify-center space-y-3 transition group cursor-pointer" onclick="openWorkspace('Blank Canvas', 'canvas')">
+                    <div class="w-10 h-10 rounded-xl bg-dark-bg border border-dark-border flex items-center justify-center text-gray-500 group-hover:text-white transition"><i class="fa-solid fa-plus"></i></div>
+                    <div class="text-center">
+                        <span class="text-xs font-bold text-gray-400 group-hover:text-white transition block">Blank Canvas</span>
+                        <p class="text-[11px] text-gray-500">Start from scratch</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- SCREEN 5: SETTINGS -->
+    <!-- ========================================================================= -->
+    <div id="screen-settings" class="screen-view hidden flex-1 flex flex-col overflow-y-auto bg-dark-bg">
+        <header class="h-16 border-b border-dark-border bg-dark-panel/80 px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 backdrop-blur-md">
+            <div class="flex items-center space-x-3">
+                <button onclick="showDashboard()" class="text-gray-400 hover:text-white transition text-xs"><i class="fa-solid fa-arrow-left mr-1"></i> Back</button>
+                <div class="h-4 w-px bg-dark-border"></div>
+                <span class="font-bold text-sm text-white">Settings</span>
+            </div>
+        </header>
+        <main class="max-w-4xl w-full mx-auto p-6 md:p-10 flex gap-8">
+            <!-- Sidebar Tabs -->
+            <div class="w-44 shrink-0 space-y-1">
+                <button onclick="switchSettingsTab('profile')" id="stab-profile" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition bg-dark-card text-white border border-dark-border"><i class="fa-solid fa-user mr-2 text-brand-500"></i>Profile</button>
+                <button onclick="switchSettingsTab('models')" id="stab-models" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition text-gray-400 hover:text-white hover:bg-dark-card"><i class="fa-solid fa-microchip mr-2 text-accent-purple"></i>Models</button>
+                <button onclick="switchSettingsTab('apikeys')" id="stab-apikeys" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition text-gray-400 hover:text-white hover:bg-dark-card"><i class="fa-solid fa-key mr-2 text-accent-amber"></i>API Keys</button>
+                <button onclick="switchSettingsTab('github')" id="stab-github" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition text-gray-400 hover:text-white hover:bg-dark-card"><i class="fa-brands fa-github mr-2"></i>GitHub</button>
+                <button onclick="switchSettingsTab('billing')" id="stab-billing" class="settings-tab w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition text-gray-400 hover:text-white hover:bg-dark-card"><i class="fa-solid fa-credit-card mr-2 text-accent-emerald"></i>Billing</button>
+            </div>
+            <!-- Tab Content -->
+            <div class="flex-1 space-y-6">
+                <!-- Profile Tab -->
+                <div id="spanel-profile" class="settings-panel space-y-5">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan flex items-center justify-center text-white font-bold text-lg">AD</div>
+                        <div>
+                            <p class="text-sm font-bold text-white">Alex Dev</p>
+                            <p class="text-xs text-gray-400">alex@company.com</p>
+                            <button class="text-[11px] text-brand-500 hover:underline mt-1">Change avatar</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[11px] text-gray-400 block mb-1">First Name</label><input value="Alex" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500"></div>
+                        <div><label class="text-[11px] text-gray-400 block mb-1">Last Name</label><input value="Dev" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500"></div>
+                    </div>
+                    <div><label class="text-[11px] text-gray-400 block mb-1">Email</label><input value="alex@company.com" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-500"></div>
+                    <button onclick="showToast('Profile saved!')" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl transition">Save Changes</button>
+                </div>
+                <!-- Models Tab -->
+                <div id="spanel-models" class="settings-panel hidden space-y-4">
+                    <p class="text-xs text-gray-400">Set your default model and configure fallback preferences.</p>
+                    <div class="space-y-3">
+                        <div class="bg-dark-card border border-brand-500/40 rounded-xl p-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-sm"><i class="fa-solid fa-fire"></i></div><div><p class="text-xs font-bold text-white">Claude 3.5 Sonnet</p><p class="text-[11px] text-gray-400">Anthropic · Best for reasoning</p></div></div>
+                            <span class="text-[10px] bg-brand-500/20 text-brand-500 px-2 py-0.5 rounded border border-brand-500/30">Default</span>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 flex items-center justify-between hover:border-gray-600 cursor-pointer transition">
+                            <div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 text-sm"><i class="fa-solid fa-brain"></i></div><div><p class="text-xs font-bold text-white">GPT-4o</p><p class="text-[11px] text-gray-400">OpenAI · Best for speed</p></div></div>
+                            <button onclick="showToast('Default model set to GPT-4o')" class="text-[10px] text-gray-400 hover:text-white border border-dark-border px-2 py-0.5 rounded transition">Set Default</button>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 flex items-center justify-between hover:border-gray-600 cursor-pointer transition">
+                            <div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-sm"><i class="fa-solid fa-gem"></i></div><div><p class="text-xs font-bold text-white">Gemini 1.5 Pro</p><p class="text-[11px] text-gray-400">Google · Best for long context</p></div></div>
+                            <button onclick="showToast('Default model set to Gemini 1.5 Pro')" class="text-[10px] text-gray-400 hover:text-white border border-dark-border px-2 py-0.5 rounded transition">Set Default</button>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 flex items-center justify-between hover:border-gray-600 cursor-pointer transition">
+                            <div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-sm"><i class="fa-solid fa-cube"></i></div><div><p class="text-xs font-bold text-white">Llama 3.1 70B</p><p class="text-[11px] text-gray-400">Meta · Open-source</p></div></div>
+                            <button onclick="showToast('Default model set to Llama 3.1')" class="text-[10px] text-gray-400 hover:text-white border border-dark-border px-2 py-0.5 rounded transition">Set Default</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- API Keys Tab -->
+                <div id="spanel-apikeys" class="settings-panel hidden space-y-4">
+                    <p class="text-xs text-gray-400">API keys are encrypted at rest and never exposed in logs.</p>
+                    <div class="space-y-3">
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2">
+                            <label class="text-[11px] text-gray-400">Anthropic API Key</label>
+                            <div class="flex space-x-2"><input type="password" value="sk-ant-xxxxxxxxxxxxxxxxxxxx" class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500"><button onclick="showToast('Key saved!')" class="px-3 py-1.5 bg-brand-600 text-white text-xs rounded-lg">Save</button></div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2">
+                            <label class="text-[11px] text-gray-400">OpenAI API Key</label>
+                            <div class="flex space-x-2"><input type="password" placeholder="sk-..." class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500"><button onclick="showToast('Key saved!')" class="px-3 py-1.5 bg-brand-600 text-white text-xs rounded-lg">Save</button></div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2">
+                            <label class="text-[11px] text-gray-400">Google AI API Key</label>
+                            <div class="flex space-x-2"><input type="password" placeholder="AIza..." class="flex-1 bg-dark-bg border border-dark-border rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-brand-500"><button onclick="showToast('Key saved!')" class="px-3 py-1.5 bg-brand-600 text-white text-xs rounded-lg">Save</button></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- GitHub Tab -->
+                <div id="spanel-github" class="settings-panel hidden space-y-4">
+                    <div class="bg-dark-card border border-accent-emerald/30 rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-3"><i class="fa-brands fa-github text-xl text-white"></i><div><p class="text-xs font-bold text-white">github.com/alexdev</p><p class="text-[11px] text-accent-emerald">Connected · 12 repos accessible</p></div></div>
+                        <button onclick="showToast('GitHub disconnected')" class="text-[11px] text-accent-rose border border-accent-rose/30 px-3 py-1 rounded-lg hover:bg-accent-rose/10 transition">Disconnect</button>
+                    </div>
+                    <div><label class="text-[11px] text-gray-400 block mb-1">Default Branch</label><select class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-white outline-none"><option>main</option><option>master</option><option>dev</option></select></div>
+                    <div class="flex items-center justify-between bg-dark-card border border-dark-border rounded-xl p-4"><div><p class="text-xs font-medium text-white">Auto-commit on deploy</p><p class="text-[11px] text-gray-400">Commit changes before each deployment</p></div><div onclick="this.classList.toggle('bg-brand-600'); this.classList.toggle('bg-dark-bg')" class="w-10 h-5 bg-brand-600 rounded-full cursor-pointer transition relative"><div class="w-4 h-4 bg-white rounded-full absolute top-0.5 right-0.5"></div></div></div>
+                </div>
+                <!-- Billing Tab -->
+                <div id="spanel-billing" class="settings-panel hidden space-y-4">
+                    <div class="bg-gradient-to-r from-brand-600/20 to-accent-purple/20 border border-brand-500/30 rounded-xl p-5 space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-white">Pro Plan</span><span class="text-[10px] bg-brand-500/20 text-brand-500 px-2 py-0.5 rounded border border-brand-500/30">Active</span></div>
+                        <p class="text-[11px] text-gray-400">$49/month · Renews Jan 1, 2026</p>
+                        <div class="pt-2 space-y-1">
+                            <div class="flex justify-between text-[11px]"><span class="text-gray-400">Token Usage</span><span class="text-white">1.2M / 5M</span></div>
+                            <div class="w-full bg-dark-bg rounded-full h-1.5"><div class="bg-gradient-to-r from-brand-500 to-accent-purple h-full rounded-full" style="width:24%"></div></div>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Redirecting to billing portal...')" class="px-4 py-2 bg-dark-card border border-dark-border text-gray-300 hover:text-white text-xs rounded-xl transition">Manage Subscription</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- MODALS -->
+    <!-- ========================================================================= -->
+    <!-- GitHub Import Modal -->
+    <div id="import-modal" class="modal-view fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-card border border-dark-border w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-dark-border pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-brands fa-github text-lg"></i> Import GitHub Repository</h3>
+                <button onclick="closeModal('import-modal')" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="text-gray-300 block mb-1">Repository URL</label>
+                    <input id="github-url-input" type="text" placeholder="https://github.com/user/my-agent-app" class="w-full bg-dark-bg border border-dark-border p-2.5 rounded-xl text-white outline-none focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-gray-300 block mb-1">Target Branch</label>
+                        <select class="w-full bg-dark-bg border border-dark-border p-2.5 rounded-xl text-white outline-none">
+                            <option>main</option>
+                            <option>master</option>
+                            <option>dev</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-gray-300 block mb-1">Detected Stack</label>
+                        <div class="bg-dark-bg border border-dark-border p-2.5 rounded-xl text-accent-emerald font-mono text-[11px]">Python / FastAPI</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end space-x-2">
+                <button onclick="closeModal('import-modal')" class="px-4 py-2 bg-dark-bg text-gray-400 hover:text-white rounded-xl text-xs">Cancel</button>
+                <button onclick="executeGithubImport()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl text-xs shadow-lg">Import Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy App Modal -->
+    <div id="deploy-modal" class="modal-view fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-card border border-dark-border w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+            <div class="w-12 h-12 bg-accent-emerald/10 text-accent-emerald rounded-full flex items-center justify-center mx-auto text-xl border border-accent-emerald/20">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">Deploying Architect Agent</h3>
+                <p class="text-xs text-gray-400 mt-1">Building Docker image & attaching SSL endpoint...</p>
+            </div>
+
+            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden border border-dark-border">
+                <div id="deploy-progress" class="bg-gradient-to-r from-brand-500 to-accent-emerald h-full w-0 transition-all duration-500"></div>
+            </div>
+
+            <button onclick="closeModal('deploy-modal')" class="w-full py-2 bg-dark-bg hover:bg-dark-hover text-gray-300 rounded-lg text-xs font-medium border border-dark-border">Close</button>
+        </div>
+    </div>
+
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[100] hidden">
+        <div class="bg-dark-card border border-dark-border text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 toast-enter">
+            <i class="fa-solid fa-circle-check text-accent-emerald"></i>
+            <span id="toast-msg">Done!</span>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <!-- ========================================================================= -->
+    <script>
+        // App State
+        let currentPersona = 'vibe';
+        let currentLens = 'canvas';
+        let activeModel = 'claude-3-5-sonnet';
+
+        // Show Screen Handler
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.remove('hidden');
+        }
+
+        // AUTH
+        function switchAuthTab(tab) {
+            document.getElementById('form-signin').classList.toggle('hidden', tab !== 'signin');
+            document.getElementById('form-signup').classList.toggle('hidden', tab !== 'signup');
+            document.querySelectorAll('.auth-tab').forEach(t => {
+                t.classList.remove('bg-dark-card', 'text-white');
+                t.classList.add('text-gray-400');
+            });
+            const active = document.getElementById(`tab-${tab}`);
+            active.classList.add('bg-dark-card', 'text-white');
+            active.classList.remove('text-gray-400');
+        }
+        function authWithGoogle() { proceedToOnboarding(); }
+        function proceedToOnboarding() { showScreen('screen-onboarding'); }
+
+        // Persona Selection Step
+        function selectPersona(persona) {
+            currentPersona = persona;
+            showScreen('screen-dashboard');
+        }
+        function showDashboard() { showScreen('screen-dashboard'); }
+
+        // Launch Workspace View
+        function openWorkspace(title, lens = 'canvas') {
+            document.getElementById('workspace-title').innerText = title;
+            showScreen('screen-workspace');
+            setLens(lens);
+        }
+        function launchNewProjectFromPrompt() {
+            const promptText = document.getElementById('dashboard-prompt').value.trim() || 'New Agentic App';
+            openWorkspace(promptText.substring(0, 24), currentPersona === 'vibe' ? 'canvas' : 'code');
+            if (currentPersona !== 'vibe') setTimeout(() => startStreamingCode(), 600);
+        }
+        function launchTemplate(name) { openWorkspace(name, 'canvas'); }
+
+        // Lens Switcher
+        function setLens(lens) {
+            currentLens = lens;
+            document.querySelectorAll('.lens-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.lens-btn').forEach(btn => {
+                btn.classList.remove('bg-dark-card', 'text-white', 'shadow-sm', 'lens-glow-canvas', 'lens-glow-hybrid', 'lens-glow-code');
+                btn.classList.add('text-gray-400');
+            });
+            const activeView = document.getElementById(`lens-${lens}-view`);
+            const activeBtn = document.getElementById(`btn-lens-${lens}`);
+            if (activeView && activeBtn) {
+                activeView.classList.remove('hidden');
+                activeBtn.classList.add('bg-dark-card', 'text-white', 'shadow-sm', `lens-glow-${lens}`);
+                activeBtn.classList.remove('text-gray-400');
+            }
+            if (lens === 'code') setTimeout(() => startStreamingCode(), 400);
+        }
+
+        // Streaming Code Animation
+        const streamLines = [
+            `<div><span class="text-purple-400">import</span> os</div>`,
+            `<div><span class="text-purple-400">from</span> pydantic_ai <span class="text-purple-400">import</span> Agent, RunContext</div>`,
+            `<div><span class="text-purple-400">from</span> pydantic <span class="text-purple-400">import</span> BaseModel</div>`,
+            `<div><br/></div>`,
+            `<div><span class="text-gray-500"># Compliance evaluation agent</span></div>`,
+            `<div>agent = Agent(</div>`,
+            `<div>&nbsp;&nbsp;model=<span class="text-green-300">'claude-3-5-sonnet'</span>,</div>`,
+            `<div>&nbsp;&nbsp;system_prompt=<span class="text-green-300">'You are a HIPAA compliance expert.'</span></div>`,
+            `<div>)</div>`,
+            `<div><br/></div>`,
+            `<div><span class="text-purple-400">@agent</span>.tool</div>`,
+            `<div><span class="text-yellow-300">async def</span> <span class="text-blue-300">check_violation</span>(ctx: RunContext, text: str) -> str:</div>`,
+            `<div>&nbsp;&nbsp;<span class="text-gray-500"># Vector search for regulation matches</span></div>`,
+            `<div>&nbsp;&nbsp;<span class="text-purple-400">return</span> <span class="text-green-300">"No violations found"</span></div>`,
+        ];
+        let streamIndex = 0;
+        let streamInterval = null;
+        function startStreamingCode() {
+            const editor = document.getElementById('code-editor-content');
+            if (!editor) return;
+            editor.innerHTML = '';
+            streamIndex = 0;
+            clearInterval(streamInterval);
+            streamInterval = setInterval(() => {
+                if (streamIndex >= streamLines.length) {
+                    clearInterval(streamInterval);
+                    return;
+                }
+                editor.innerHTML += streamLines[streamIndex];
+                streamIndex++;
+                editor.scrollTop = editor.scrollHeight;
+            }, 120);
+        }
+
+        // Chat Prompt Trigger
+        function sendCanvasPrompt() {
+            const input = document.getElementById('canvas-prompt-input');
+            const chat = document.getElementById('canvas-chat-box');
+            if (!input.value.trim()) return;
+            const userDiv = document.createElement('div');
+            userDiv.className = 'bg-brand-600/20 text-right p-2.5 rounded-xl border border-brand-500/30 ml-4';
+            userDiv.innerHTML = `<span class="font-bold text-brand-500 text-[10px]">You</span><p class="text-white">${input.value}</p>`;
+            chat.appendChild(userDiv);
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+            setTimeout(() => {
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'bg-dark-bg p-2.5 rounded-xl border border-dark-border space-y-1 mr-4';
+                aiDiv.innerHTML = `<span class="font-bold text-accent-purple text-[10px]">Architect AI</span><p class="text-gray-300">Node graph modified. Updated pipeline synthesized.</p>`;
+                chat.appendChild(aiDiv);
+                chat.scrollTop = chat.scrollHeight;
+            }, 800);
+        }
+
+        // Terminal Log Simulation
+        function runTerminalLogs() {
+            const out = document.getElementById('terminal-output');
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-accent-cyan">[LOG]</span> Executing test agent suite... <span class="text-accent-emerald">Passed (0.42s)</span>`;
+            out.appendChild(div);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        // Modal Handlers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'deploy-modal') {
+                const p = document.getElementById('deploy-progress');
+                p.style.width = '0%';
+                setTimeout(() => p.style.width = '40%', 400);
+                setTimeout(() => { p.style.width = '100%'; setTimeout(() => showToast('Deployed! Live at architect.app'), 600); }, 1200);
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function executeGithubImport() {
+            closeModal('import-modal');
+            showToast('Repository imported successfully!');
+            openWorkspace('Imported GitHub Project', 'code');
+        }
+
+        // Model Selector
+        function toggleModelDropdown() {
+            document.getElementById('model-dropdown').classList.toggle('hidden');
+        }
+        function selectModel(label, modelId) {
+            activeModel = modelId;
+            document.getElementById('active-model-label').innerText = label;
+            document.getElementById('model-dropdown').classList.add('hidden');
+            showToast(`Model switched to ${label}`);
+        }
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('model-selector-btn');
+            const dd = document.getElementById('model-dropdown');
+            if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) dd.classList.add('hidden');
+            const avatarMenu = document.getElementById('avatar-menu');
+            if (avatarMenu && !e.target.closest('#avatar-menu') && !e.target.closest('[onclick="toggleAvatarMenu()"]')) avatarMenu.classList.add('hidden');
+        });
+
+        // Avatar Dropdown
+        function toggleAvatarMenu() { document.getElementById('avatar-menu').classList.toggle('hidden'); }
+        function closeAvatarMenu() { document.getElementById('avatar-menu').classList.add('hidden'); }
+
+        // Node Config Panel
+        function openNodeConfig(nodeName) {
+            const panel = document.getElementById('node-config-panel');
+            const nameInput = document.getElementById('node-name-input');
+            if (nameInput) nameInput.value = nodeName;
+            panel.classList.remove('hidden');
+            panel.classList.add('slide-in-right');
+        }
+        function closeNodeConfig() {
+            document.getElementById('node-config-panel').classList.add('hidden');
+        }
+        function saveNodeConfig() {
+            closeNodeConfig();
+            showToast('Node configuration saved!');
+        }
+
+        // Settings Tabs
+        function switchSettingsTab(tab) {
+            document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.settings-tab').forEach(t => {
+                t.classList.remove('bg-dark-card', 'text-white', 'border', 'border-dark-border');
+                t.classList.add('text-gray-400');
+            });
+            document.getElementById(`spanel-${tab}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`stab-${tab}`);
+            activeTab.classList.add('bg-dark-card', 'text-white', 'border', 'border-dark-border');
+            activeTab.classList.remove('text-gray-400');
+        }
+
+        // Toast
+        let toastTimer = null;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // Initialize — start at Auth screen
+        window.onload = function() { showScreen('screen-auth'); };
+    </script>
+</body>
+</html>

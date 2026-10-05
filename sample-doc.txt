@@ -1,0 +1,104 @@
+want to build an agentic AI application that automatically reads PDF files uploaded daily and generates a concise, useful summary.
+
+Core Requirements
+Google Drive Integration
+Connect the application to Google Drive.
+Monitor a specific Google Drive folder for newly uploaded PDFs.
+The application should be able to authenticate securely and access only the required folder/files.
+Daily PDF Processing
+Detect PDFs that were newly uploaded each day.
+Process each PDF automatically without requiring manual intervention.
+Avoid processing the same PDF more than once.
+Maintain a record of processed files, including filename, upload date, processing status, and summary.
+PDF Understanding Agent
+Extract text from the PDF.
+If the PDF contains tables, charts, or images, use appropriate document/image understanding capabilities.
+Handle both text-based and scanned PDFs using OCR when required.
+Identify the important information rather than simply extracting and concatenating text.
+Summary Agent
+Generate a structured summary for each PDF.
+The summary should include:
+Executive summary
+Key points
+Important numbers/statistics
+Major findings
+Risks or issues identified
+Action items, if any
+Important dates/deadlines
+Preserve important context and avoid hallucinating information that is not present in the PDF.
+
+Agentic Workflow
+Design this as an agentic application, not just a simple PDF-to-summary pipeline.
+
+Suggested agents:
+
+Drive Monitoring Agent – identifies new PDFs.
+Document Processing Agent – extracts and validates document content.
+Analysis Agent – identifies important information, trends, risks, and action items.
+Summary Agent – creates the final structured summary.
+Quality/Evaluation Agent – checks the summary against the source document and identifies hallucinations or missing critical information.
+Notification Agent – optionally sends the completed summary through email, Slack, or another configured channel.
+Knowledge & History
+Store document metadata and generated summaries.
+Maintain processing history.
+Allow users to search previously processed PDFs and summaries.
+If multiple PDFs contain related information, the system should optionally compare them and identify changes or trends over time.
+User Interface
+Build a simple dashboard showing:
+Newly processed PDFs
+Processing status
+Generated summaries
+Failed documents
+Processing history
+Document search
+Summary comparison between different dates
+Reliability
+Handle duplicate files.
+Handle corrupted or unreadable PDFs.
+Retry failed processing.
+Log every agent's activity.
+Provide clear error messages.
+Make the workflow idempotent so the same document is not processed multiple times.
+Architecture
+
+Please propose an enterprise-ready architecture for this application, including:
+
+Frontend
+Backend/API
+Agent orchestration framework
+LLM/model
+PDF/document extraction
+OCR
+Vector database, if required
+Database
+Google Drive integration
+Queue/event system
+Scheduler
+Storage
+Authentication/authorization
+Observability and logging
+Evaluation framework
+
+Also explain the complete end-to-end flow, from the moment a PDF is uploaded to Google Drive until the final summary is generated and delivered to the user.
+
+The architecture should be scalable so that it can process hundreds or thousands of PDFs per day.
+
+Prefer an architecture that uses AWS services and Amazon Bedrock where appropriate, but compare alternatives if another technology is better suited.
+
+Finally, provide:
+
+High-level architecture diagram
+Component-by-component explanation
+Agent responsibilities
+Data flow
+Database schema
+API design
+Google Drive integration approach
+Security architecture
+Error-handling strategy
+Cost considerations
+Deployment architecture
+Recommended technology stack
+Example folder structure
+Sample agent workflow/pseudocode
+A phased implementation plan from MVP to production

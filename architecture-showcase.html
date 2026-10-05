@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architect 2.0 — PDF Summary Agent · How It Works</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode:'class',
+  theme:{ extend:{
+    colors:{
+      brand:{ 500:'#6366f1', 600:'#4f46e5' },
+      dark:{ bg:'#060910', panel:'#0b1120', card:'#101828', border:'#1a2740', hover:'#162035' },
+      accent:{ cyan:'#06b6d4', purple:'#a855f7', emerald:'#10b981', amber:'#f59e0b', rose:'#f43f5e', blue:'#3b82f6' }
+    },
+    fontFamily:{ sans:['Inter','sans-serif'], mono:['Fira Code','monospace'] }
+  }}
+}
+</script>
+<style>
+  *{box-sizing:border-box;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:#060910;}
+  ::-webkit-scrollbar-thumb{background:#1a2740;border-radius:4px;}
+  body{background:#060910;}
+
+  .glass{background:rgba(11,17,32,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);}
+  .glow-cyan{box-shadow:0 0 30px -8px rgba(6,182,212,0.4);}
+  .glow-purple{box-shadow:0 0 30px -8px rgba(168,85,247,0.4);}
+  .glow-emerald{box-shadow:0 0 30px -8px rgba(16,185,129,0.4);}
+  .glow-brand{box-shadow:0 0 30px -8px rgba(99,102,241,0.4);}
+
+  .gradient-text{background:linear-gradient(135deg,#06b6d4,#a855f7,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .gradient-border-card{background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(168,85,247,0.3),rgba(6,182,212,0.3));padding:1px;border-radius:1rem;}
+  .gradient-border-inner{background:#101828;border-radius:calc(1rem - 1px);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+  @keyframes pulse2{0%,100%{opacity:.6;}50%{opacity:1;}}
+  @keyframes slideRight{from{width:0;}to{width:100%;}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .fade-up{animation:fadeUp 0.5s ease-out forwards;}
+  .float{animation:float 4s ease-in-out infinite;}
+  .pulse{animation:pulse2 2s ease-in-out infinite;}
+  .spin{animation:spin 2s linear infinite;}
+
+  .tab-btn.active{background:#4f46e5;color:#fff;border-color:#6366f1;}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  .flow-arrow{position:relative;}
+  .flow-arrow::after{content:'';position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);width:1px;height:20px;background:linear-gradient(to bottom,#1a2740,transparent);}
+
+  .node-card{transition:all 0.2s ease;cursor:pointer;}
+  .node-card:hover{transform:translateY(-2px);}
+
+  .arch-line{stroke-dasharray:6,4;animation:dash 20s linear infinite;}
+  @keyframes dash{to{stroke-dashoffset:-100;}}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:9999px;font-weight:600;letter-spacing:.02em;}
+
+  .persona-tab.active .persona-indicator{background:#6366f1;}
+  .persona-tab.active{border-color:#6366f1 !important;background:rgba(99,102,241,0.08);}
+
+  .step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+
+  /* Animated connection lines */
+  .conn-line{position:relative;}
+  .conn-line::before{content:'';position:absolute;left:13px;top:100%;width:1px;height:24px;background:linear-gradient(to bottom,#1a2740 0%,transparent 100%);}
+
+  .bg-grid{background-image:linear-gradient(rgba(26,39,64,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(26,39,64,0.4) 1px,transparent 1px);background-size:40px 40px;}
+</style>
+</head>
+<body class="text-gray-200 font-sans">
+
+<!-- ===================== HERO NAV ===================== -->
+<nav class="h-14 border-b border-dark-border bg-dark-panel/90 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur-xl">
+  <div class="flex items-center space-x-3">
+    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-accent-purple via-brand-500 to-accent-cyan flex items-center justify-center shadow-lg">
+      <i class="fa-solid fa-layer-group text-white text-xs"></i>
+    </div>
+    <span class="font-extrabold text-sm text-white">Architect <span class="text-xs px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-500 border border-brand-500/30">2.0</span></span>
+    <div class="h-4 w-px bg-dark-border hidden md:block"></div>
+    <span class="text-xs text-gray-500 hidden md:block">PDF Summary Agent · Architecture Showcase</span>
+  </div>
+  <div class="flex items-center space-x-2">
+    <button onclick="setPersona('nontechnical')" id="nav-vibe" class="text-xs px-3 py-1.5 rounded-lg border border-dark-border text-gray-400 hover:text-white hover:border-accent-cyan/50 transition flex items-center gap-1.5">
+      <i class="fa-solid fa-wand-magic-sparkles text-accent-cyan text-[10px]"></i> Vibe Mode
+    </button>
+    <button onclick="setPersona('technical')" id="nav-code" class="text-xs px-3 py-1.5 rounded-lg border border-dark-border text-gray-400 hover:text-white hover:border-brand-500/50 transition flex items-center gap-1.5">
+      <i class="fa-solid fa-terminal text-brand-500 text-[10px]"></i> Dev Mode
+    </button>
+  </div>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<section class="relative overflow-hidden bg-grid py-20 px-6 text-center">
+  <div class="absolute inset-0 bg-gradient-to-b from-dark-bg via-dark-bg/95 to-dark-bg pointer-events-none"></div>
+  <!-- Glow orbs -->
+  <div class="absolute top-10 left-1/4 w-64 h-64 bg-accent-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute top-10 right-1/4 w-64 h-64 bg-accent-cyan/10 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative max-w-4xl mx-auto space-y-6 fade-up">
+    <div class="inline-flex items-center space-x-2 bg-dark-card/80 px-4 py-2 rounded-full border border-dark-border text-xs text-gray-400">
+      <span class="w-2 h-2 rounded-full bg-accent-emerald pulse"></span>
+      <span>Sample Case · Real Prompt · Real Architecture</span>
+    </div>
+    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white leading-tight">
+      PDF Summary<br><span class="gradient-text">Agent Pipeline</span>
+    </h1>
+    <p class="text-sm md:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed">
+      A user asked Architect 2.0 to build an autonomous PDF processing system. Here's exactly how the platform responds — for both non-technical founders and senior engineers.
+    </p>
+
+    <!-- Persona Toggle -->
+    <div class="inline-flex bg-dark-card border border-dark-border rounded-2xl p-1.5 space-x-1">
+      <button onclick="setPersona('nontechnical')" id="btn-nontechnical"
+        class="persona-tab flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-semibold border border-transparent transition-all duration-200 text-gray-400">
+        <div class="persona-indicator w-2 h-2 rounded-full bg-gray-600 transition-colors"></div>
+        <i class="fa-solid fa-wand-magic-sparkles text-accent-cyan"></i>
+        <span>Non-Technical View</span>
+      </button>
+      <button onclick="setPersona('technical')" id="btn-technical"
+        class="persona-tab flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-semibold border border-transparent transition-all duration-200 text-gray-400">
+        <div class="persona-indicator w-2 h-2 rounded-full bg-gray-600 transition-colors"></div>
+        <i class="fa-solid fa-terminal text-brand-500"></i>
+        <span>Technical / Dev View</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THE PROMPT ===================== -->
+<section class="max-w-5xl mx-auto px-6 py-10 space-y-4">
+  <div class="flex items-center space-x-3 mb-2">
+    <div class="w-8 h-8 rounded-xl bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center text-accent-purple text-sm"><i class="fa-solid fa-comment-dots"></i></div>
+    <div>
+      <p class="text-xs font-bold text-white">The User's Prompt</p>
+      <p class="text-[11px] text-gray-500">Typed into Architect 2.0 dashboard</p>
+    </div>
+  </div>
+  <div class="glass rounded-2xl p-6 border border-dark-border glow-purple">
+    <div class="flex items-start space-x-3">
+      <i class="fa-solid fa-wand-magic-sparkles text-accent-purple text-lg mt-0.5 shrink-0"></i>
+      <p class="text-sm text-gray-200 leading-relaxed">
+        "I want to build an agentic AI application that automatically reads PDF files uploaded daily and generates a concise, useful summary. Connect to Google Drive, monitor a folder for new PDFs, handle OCR for scanned docs, run a multi-agent pipeline with a Quality/Eval agent to prevent hallucinations, store summaries in a database, send notifications via email or Slack. Build a dashboard to view processing status, history, and search summaries. Use AWS and Amazon Bedrock. Make it enterprise-ready and scalable to thousands of PDFs per day."
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-dark-border">
+      <span class="tag bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20"><i class="fa-solid fa-robot"></i> 6 Agents Detected</span>
+      <span class="tag bg-accent-purple/10 text-accent-purple border border-accent-purple/20"><i class="fa-solid fa-diagram-project"></i> LangGraph Selected</span>
+      <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20"><i class="fa-brands fa-aws"></i> AWS + Bedrock</span>
+      <span class="tag bg-accent-amber/10 text-accent-amber border border-accent-amber/20"><i class="fa-solid fa-plug"></i> 4 Integrations</span>
+      <span class="tag bg-brand-500/10 text-brand-500 border border-brand-500/20"><i class="fa-solid fa-gauge"></i> Dashboard Required</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== NON-TECHNICAL VIEW ===================== -->
+<div id="view-nontechnical" class="persona-view">
+
+<!-- How It Works Simply -->
+<section class="max-w-5xl mx-auto px-6 py-10 space-y-6">
+  <div class="text-center space-y-2">
+    <span class="tag bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 mx-auto"><i class="fa-solid fa-wand-magic-sparkles"></i> Vibe Mode — Non-Technical View</span>
+    <h2 class="text-2xl font-extrabold text-white mt-2">Here's what Architect 2.0 builds for you</h2>
+    <p class="text-sm text-gray-400">No code needed. Just describe what you want.</p>
+  </div>
+
+  <!-- Simple 5-step flow -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+    <div class="gradient-border-card float" style="animation-delay:0s">
+      <div class="gradient-border-inner p-4 text-center space-y-3 h-full">
+        <div class="w-12 h-12 rounded-2xl bg-accent-amber/10 border border-accent-amber/30 flex items-center justify-center text-accent-amber text-xl mx-auto"><i class="fa-brands fa-google-drive"></i></div>
+        <p class="text-xs font-bold text-white">You upload a PDF</p>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Drop any PDF into your Google Drive folder — reports, contracts, invoices, anything</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-center text-dark-border text-xl hidden md:flex"><i class="fa-solid fa-arrow-right"></i></div>
+    <div class="gradient-border-card float" style="animation-delay:0.5s">
+      <div class="gradient-border-inner p-4 text-center space-y-3 h-full">
+        <div class="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan text-xl mx-auto"><i class="fa-solid fa-robot"></i></div>
+        <p class="text-xs font-bold text-white">AI reads it</p>
+        <p class="text-[11px] text-gray-400 leading-relaxed">6 AI agents automatically detect, extract, and understand the document — even scanned ones</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-center text-dark-border text-xl hidden md:flex"><i class="fa-solid fa-arrow-right"></i></div>
+    <div class="gradient-border-card float" style="animation-delay:1s">
+      <div class="gradient-border-inner p-4 text-center space-y-3 h-full">
+        <div class="w-12 h-12 rounded-2xl bg-accent-emerald/10 border border-accent-emerald/30 flex items-center justify-center text-accent-emerald text-xl mx-auto"><i class="fa-solid fa-file-lines"></i></div>
+        <p class="text-xs font-bold text-white">You get a summary</p>
+        <p class="text-[11px] text-gray-400 leading-relaxed">A clean structured summary lands in your email or Slack — key points, risks, action items</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- What you see in the dashboard -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-gauge text-accent-cyan"></i> Your Dashboard</p>
+    <div class="glass rounded-2xl overflow-hidden border border-dark-border glow-cyan">
+      <!-- Browser chrome -->
+      <div class="h-9 bg-dark-panel border-b border-dark-border px-4 flex items-center justify-between">
+        <div class="flex items-center space-x-1.5">
+          <span class="w-3 h-3 rounded-full bg-red-500/70"></span>
+          <span class="w-3 h-3 rounded-full bg-yellow-500/70"></span>
+          <span class="w-3 h-3 rounded-full bg-green-500/70"></span>
+        </div>
+        <span class="text-[11px] font-mono text-gray-500">pdf-agent.architect.app/dashboard</span>
+        <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 pulse">● Live</span>
+      </div>
+      <div class="p-5 space-y-4">
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-dark-bg border border-dark-border rounded-xl p-3 text-center space-y-1">
+            <p class="text-2xl font-black text-accent-emerald">24</p>
+            <p class="text-[10px] text-gray-400">Processed Today</p>
+          </div>
+          <div class="bg-dark-bg border border-dark-border rounded-xl p-3 text-center space-y-1">
+            <p class="text-2xl font-black text-accent-amber">3</p>
+            <p class="text-[10px] text-gray-400">In Progress</p>
+          </div>
+          <div class="bg-dark-bg border border-dark-border rounded-xl p-3 text-center space-y-1">
+            <p class="text-2xl font-black text-accent-rose">1</p>
+            <p class="text-[10px] text-gray-400">Failed</p>
+          </div>
+          <div class="bg-dark-bg border border-dark-border rounded-xl p-3 text-center space-y-1">
+            <p class="text-2xl font-black text-brand-500">0.91</p>
+            <p class="text-[10px] text-gray-400">Accuracy Score</p>
+          </div>
+        </div>
+        <!-- Recent summaries -->
+        <div class="space-y-2">
+          <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Recent Summaries</p>
+          <div class="space-y-2">
+            <div class="bg-dark-bg border border-accent-emerald/20 rounded-xl p-3 flex items-start justify-between gap-3">
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-accent-emerald/10 border border-accent-emerald/20 flex items-center justify-center text-accent-emerald text-sm shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
+                <div>
+                  <p class="text-xs font-bold text-white">Q3_Financial_Report.pdf</p>
+                  <p class="text-[11px] text-gray-400 mt-0.5">Executive summary · 7 key points · 2 risks identified · 3 action items</p>
+                </div>
+              </div>
+              <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 shrink-0">Done</span>
+            </div>
+            <div class="bg-dark-bg border border-accent-amber/20 rounded-xl p-3 flex items-start justify-between gap-3">
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center text-accent-amber text-sm shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
+                <div>
+                  <p class="text-xs font-bold text-white">Vendor_Contract_Nov.pdf</p>
+                  <p class="text-[11px] text-gray-400 mt-0.5">Reading document... extracting clauses...</p>
+                </div>
+              </div>
+              <span class="tag bg-accent-amber/10 text-accent-amber border border-accent-amber/20 shrink-0 pulse">Processing</span>
+            </div>
+          </div>
+        </div>
+        <!-- Search -->
+        <div class="flex items-center space-x-2 bg-dark-bg border border-dark-border rounded-xl px-3 py-2.5">
+          <i class="fa-solid fa-magnifying-glass text-gray-500 text-xs"></i>
+          <span class="text-xs text-gray-500">Search summaries... e.g. "HIPAA violations" or "Q3 revenue"</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What the summary looks like -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-file-lines text-accent-purple"></i> What a Generated Summary Looks Like</p>
+    <div class="glass rounded-2xl p-5 border border-dark-border space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-accent-purple/10 border border-accent-purple/20 flex items-center justify-center text-accent-purple"><i class="fa-solid fa-file-pdf"></i></div>
+          <div>
+            <p class="text-xs font-bold text-white">Q3_Financial_Report.pdf</p>
+            <p class="text-[10px] text-gray-400">Processed · 2 min ago · Accuracy 0.94</p>
+          </div>
+        </div>
+        <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20"><i class="fa-solid fa-check-circle"></i> Verified</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="bg-dark-bg border border-dark-border rounded-xl p-3 space-y-1.5">
+          <p class="text-[10px] font-bold text-accent-cyan uppercase tracking-wider">Executive Summary</p>
+          <p class="text-xs text-gray-300 leading-relaxed">Revenue grew 18% YoY to $4.2M. Operating margins improved to 23%. Three new enterprise clients onboarded in Q3.</p>
+        </div>
+        <div class="bg-dark-bg border border-dark-border rounded-xl p-3 space-y-1.5">
+          <p class="text-[10px] font-bold text-accent-amber uppercase tracking-wider">Key Numbers</p>
+          <div class="space-y-1 text-xs text-gray-300">
+            <div class="flex justify-between"><span>Revenue</span><span class="text-white font-semibold">$4.2M (+18%)</span></div>
+            <div class="flex justify-between"><span>Operating Margin</span><span class="text-white font-semibold">23%</span></div>
+            <div class="flex justify-between"><span>New Clients</span><span class="text-white font-semibold">3 Enterprise</span></div>
+          </div>
+        </div>
+        <div class="bg-dark-bg border border-accent-rose/20 rounded-xl p-3 space-y-1.5">
+          <p class="text-[10px] font-bold text-accent-rose uppercase tracking-wider">Risks Identified</p>
+          <ul class="space-y-1 text-xs text-gray-300">
+            <li class="flex items-start gap-1.5"><i class="fa-solid fa-triangle-exclamation text-accent-rose text-[10px] mt-0.5"></i> Supply chain delays may impact Q4</li>
+            <li class="flex items-start gap-1.5"><i class="fa-solid fa-triangle-exclamation text-accent-rose text-[10px] mt-0.5"></i> FX exposure in EU markets</li>
+          </ul>
+        </div>
+        <div class="bg-dark-bg border border-accent-emerald/20 rounded-xl p-3 space-y-1.5">
+          <p class="text-[10px] font-bold text-accent-emerald uppercase tracking-wider">Action Items</p>
+          <ul class="space-y-1 text-xs text-gray-300">
+            <li class="flex items-start gap-1.5"><i class="fa-solid fa-circle-check text-accent-emerald text-[10px] mt-0.5"></i> Review EU hedging strategy by Nov 30</li>
+            <li class="flex items-start gap-1.5"><i class="fa-solid fa-circle-check text-accent-emerald text-[10px] mt-0.5"></i> Onboard 2 more enterprise clients Q4</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple agent explanation -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-robot text-accent-purple"></i> The 6 AI Agents Working Behind the Scenes</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-accent-amber/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center text-accent-amber text-sm"><i class="fa-solid fa-eye"></i></div>
+          <p class="text-xs font-bold text-white">Watcher</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Keeps an eye on your Google Drive folder. The moment a new PDF appears, it wakes up the rest of the team.</p>
+      </div>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-accent-rose/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-accent-rose/10 border border-accent-rose/20 flex items-center justify-center text-accent-rose text-sm"><i class="fa-solid fa-file-pdf"></i></div>
+          <p class="text-xs font-bold text-white">Reader</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Opens the PDF and reads every word — even if it's a scanned image. Handles tables, charts, and messy formatting.</p>
+      </div>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-accent-cyan/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan text-sm"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <p class="text-xs font-bold text-white">Analyst</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Finds what actually matters — key numbers, risks, deadlines, and trends. Ignores the filler.</p>
+      </div>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-accent-purple/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-accent-purple/10 border border-accent-purple/20 flex items-center justify-center text-accent-purple text-sm"><i class="fa-solid fa-pen-nib"></i></div>
+          <p class="text-xs font-bold text-white">Writer</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Writes a clean, structured summary with sections for exec overview, key points, risks, and action items.</p>
+      </div>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-accent-emerald/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-accent-emerald/10 border border-accent-emerald/20 flex items-center justify-center text-accent-emerald text-sm"><i class="fa-solid fa-shield-check"></i></div>
+          <p class="text-xs font-bold text-white">Fact-Checker</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Reads the summary and compares it to the original. If anything looks made up, it sends the Writer back to try again.</p>
+      </div>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 space-y-2 node-card hover:border-brand-500/50">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-500 text-sm"><i class="fa-solid fa-bell"></i></div>
+          <p class="text-xs font-bold text-white">Messenger</p>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">Sends the finished summary to your email or Slack channel. You don't have to check anything — it comes to you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ===================== TECHNICAL VIEW ===================== -->
+<div id="view-technical" class="persona-view hidden">
+
+<!-- Agent Pipeline Technical -->
+<section class="max-w-5xl mx-auto px-6 py-10 space-y-6">
+  <div class="text-center space-y-2">
+    <span class="tag bg-brand-500/10 text-brand-500 border border-brand-500/20 mx-auto"><i class="fa-solid fa-terminal"></i> Dev Mode — Technical Architecture</span>
+    <h2 class="text-2xl font-extrabold text-white mt-2">LangGraph Multi-Agent Pipeline</h2>
+    <p class="text-sm text-gray-400">Stateful graph with eval retry loop · AWS-native · Scalable to 10k PDFs/day</p>
+  </div>
+
+  <!-- Agent Flow with connectors -->
+  <div class="glass rounded-2xl p-6 border border-dark-border glow-brand space-y-3">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-diagram-project text-brand-500"></i> LangGraph State Machine</span>
+      <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">PDFState TypedDict</span>
+    </div>
+
+    <!-- Node 1 -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-accent-amber/20 border border-accent-amber/40 flex items-center justify-center text-accent-amber text-xs font-bold">1</div>
+        <div class="w-px flex-1 bg-dark-border mt-1"></div>
+      </div>
+      <div class="flex-1 bg-dark-bg border border-accent-amber/30 rounded-xl p-3 mb-3 node-card hover:border-accent-amber/60">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-eye text-accent-amber"></i> Drive Monitor Agent</span>
+          <div class="flex gap-1">
+            <span class="tag bg-dark-card border border-dark-border text-gray-400">EventBridge cron</span>
+            <span class="tag bg-accent-amber/10 text-accent-amber border border-accent-amber/20">Trigger</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400">Polls Google Drive API every 15 min · dedup check via <code class="text-accent-cyan bg-dark-card px-1 rounded">drive_file_id</code> in RDS · pushes new file IDs to SQS queue</p>
+        <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+          state["new_files"] = drive.list_new(folder_id, since=last_run)
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 2 -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-accent-rose/20 border border-accent-rose/40 flex items-center justify-center text-accent-rose text-xs font-bold">2</div>
+        <div class="w-px flex-1 bg-dark-border mt-1"></div>
+      </div>
+      <div class="flex-1 bg-dark-bg border border-accent-rose/30 rounded-xl p-3 mb-3 node-card hover:border-accent-rose/60">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-file-pdf text-accent-rose"></i> Document Processing Agent</span>
+          <div class="flex gap-1">
+            <span class="tag bg-dark-card border border-dark-border text-gray-400">AWS Textract</span>
+            <span class="tag bg-accent-rose/10 text-accent-rose border border-accent-rose/20">Extractor</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400">Downloads PDF from Drive → S3 · Detects if scanned (image-based) → routes to Textract OCR · text-based → PyPDF2 · validates extraction quality · stores raw text in S3</p>
+        <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+          state["raw_text"] = textract.extract(s3_key) if is_scanned else pypdf2.read(s3_key)
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 3 -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-accent-cyan/20 border border-accent-cyan/40 flex items-center justify-center text-accent-cyan text-xs font-bold">3</div>
+        <div class="w-px flex-1 bg-dark-border mt-1"></div>
+      </div>
+      <div class="flex-1 bg-dark-bg border border-accent-cyan/30 rounded-xl p-3 mb-3 node-card hover:border-accent-cyan/60">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-accent-cyan"></i> Analysis Agent</span>
+          <div class="flex gap-1">
+            <span class="tag bg-dark-card border border-dark-border text-gray-400">Bedrock Claude 3.5</span>
+            <span class="tag bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20">Analyzer</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400">Chunks text with semantic splitter · embeds via Titan Embed v2 · stores in OpenSearch · identifies key entities, numbers, risks, action items via structured output</p>
+        <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+          state["analysis"] = bedrock.invoke(analysis_prompt, structured_output=AnalysisSchema)
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 4 -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-accent-purple/20 border border-accent-purple/40 flex items-center justify-center text-accent-purple text-xs font-bold">4</div>
+        <div class="w-px flex-1 bg-dark-border mt-1"></div>
+      </div>
+      <div class="flex-1 bg-dark-bg border border-accent-purple/30 rounded-xl p-3 mb-3 node-card hover:border-accent-purple/60">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-pen-nib text-accent-purple"></i> Summary Agent</span>
+          <div class="flex gap-1">
+            <span class="tag bg-dark-card border border-dark-border text-gray-400">Bedrock Claude 3.5</span>
+            <span class="tag bg-accent-purple/10 text-accent-purple border border-accent-purple/20">Generator</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400">Generates structured JSON summary: exec_summary, key_points[], statistics[], risks[], action_items[], important_dates[] · uses analysis state as grounding context</p>
+        <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+          state["summary"] = bedrock.invoke(summary_prompt, output=SummarySchema)
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 5 — Eval with loop -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-accent-emerald/20 border border-accent-emerald/40 flex items-center justify-center text-accent-emerald text-xs font-bold">5</div>
+        <div class="w-px flex-1 bg-dark-border mt-1"></div>
+      </div>
+      <div class="flex-1 space-y-2 mb-3">
+        <div class="bg-dark-bg border border-accent-emerald/40 rounded-xl p-3 node-card hover:border-accent-emerald/70">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-shield-check text-accent-emerald"></i> Quality / Eval Agent</span>
+            <div class="flex gap-1">
+              <span class="tag bg-dark-card border border-dark-border text-gray-400">LangSmith eval</span>
+              <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">Evaluator</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-400">Scores summary on faithfulness (0–1) against source text · checks for hallucinations · if score &lt; 0.85 AND retry_count &lt; 3 → loops back to Summary Agent with critique</p>
+          <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+            if eval_score &lt; 0.85 and state["retry_count"] &lt; 3: return "summary_node"
+          </div>
+        </div>
+        <!-- Retry loop indicator -->
+        <div class="flex items-center space-x-2 px-3">
+          <i class="fa-solid fa-rotate-left text-accent-emerald text-xs"></i>
+          <div class="flex-1 h-px bg-accent-emerald/20 border-t border-dashed border-accent-emerald/30"></div>
+          <span class="text-[10px] text-accent-emerald font-mono">retry → summary_node (max 3x)</span>
+          <div class="flex-1 h-px bg-accent-emerald/20 border-t border-dashed border-accent-emerald/30"></div>
+          <i class="fa-solid fa-arrow-up text-accent-emerald text-xs"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 6 -->
+    <div class="flex items-stretch gap-3">
+      <div class="flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-500 text-xs font-bold">6</div>
+      </div>
+      <div class="flex-1 bg-dark-bg border border-brand-500/30 rounded-xl p-3 node-card hover:border-brand-500/60">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-white flex items-center gap-2"><i class="fa-solid fa-bell text-brand-500"></i> Notification Agent</span>
+          <div class="flex gap-1">
+            <span class="tag bg-dark-card border border-dark-border text-gray-400">AWS SES + Slack</span>
+            <span class="tag bg-brand-500/10 text-brand-500 border border-brand-500/20">Notifier</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400">Saves summary to RDS + embeds into OpenSearch · sends via SES email and/or Slack webhook · updates document status to "completed" · logs to CloudWatch</p>
+        <div class="mt-2 font-mono text-[10px] text-gray-500 bg-dark-card rounded-lg px-3 py-2 border border-dark-border">
+          db.save(summary); ses.send(email, summary); slack.post(webhook, summary)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack Table -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-server text-accent-cyan"></i> Full Technology Stack</p>
+    <div class="glass rounded-2xl overflow-hidden border border-dark-border">
+      <div class="grid grid-cols-3 px-4 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-dark-bg/60 border-b border-dark-border">
+        <span>Layer</span><span>Service</span><span>Reason</span>
+      </div>
+      <div class="divide-y divide-dark-border text-xs">
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Agent Framework</span><span class="text-accent-cyan font-semibold">LangGraph 0.2</span><span class="text-gray-500">Stateful graph, conditional edges for eval loop</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">LLM</span><span class="text-orange-400 font-semibold">Amazon Bedrock Claude 3.5</span><span class="text-gray-500">Best reasoning, AWS-native, no data egress</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">OCR / PDF</span><span class="text-yellow-400 font-semibold">AWS Textract + PyPDF2</span><span class="text-gray-500">Handles scanned + digital, tables, forms</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Embeddings</span><span class="text-blue-400 font-semibold">Amazon Titan Embed v2</span><span class="text-gray-500">1024-dim, AWS-native, no extra cost</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Vector DB</span><span class="text-accent-purple font-semibold">Amazon OpenSearch</span><span class="text-gray-500">kNN search, managed, integrates with Bedrock KB</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Database</span><span class="text-blue-400 font-semibold">Amazon RDS Postgres</span><span class="text-gray-500">Document metadata, summaries, processing history</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Queue</span><span class="text-accent-emerald font-semibold">Amazon SQS</span><span class="text-gray-500">Decouples ingestion from processing, handles bursts</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Scheduler</span><span class="text-accent-emerald font-semibold">Amazon EventBridge</span><span class="text-gray-500">Cron rule triggers Drive Monitor every 15 min</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Storage</span><span class="text-accent-amber font-semibold">Amazon S3</span><span class="text-gray-500">Raw PDFs, extracted text, summary JSON artifacts</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Compute</span><span class="text-gray-300 font-semibold">AWS ECS Fargate</span><span class="text-gray-500">Serverless containers, auto-scales per SQS depth</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Auth</span><span class="text-brand-500 font-semibold">Amazon Cognito</span><span class="text-gray-500">User auth + Google OAuth federation</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Notifications</span><span class="text-accent-rose font-semibold">AWS SES + Slack Webhooks</span><span class="text-gray-500">Email + Slack delivery for completed summaries</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">Observability</span><span class="text-gray-300 font-semibold">CloudWatch + LangSmith</span><span class="text-gray-500">Infra metrics + per-agent trace logging</span></div>
+        <div class="grid grid-cols-3 px-4 py-3 hover:bg-dark-hover transition"><span class="text-gray-400">API</span><span class="text-gray-300 font-semibold">FastAPI + API Gateway</span><span class="text-gray-500">REST endpoints for dashboard + webhook receivers</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB Schema -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-database text-accent-amber"></i> Database Schema</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl overflow-hidden border border-dark-border">
+        <div class="h-8 bg-dark-panel border-b border-dark-border px-4 flex items-center">
+          <span class="text-[11px] font-mono text-accent-cyan">documents</span>
+        </div>
+        <div class="p-4 font-mono text-[11px] text-gray-300 space-y-0.5 leading-relaxed">
+          <div><span class="text-accent-amber">id</span> <span class="text-gray-500">UUID PRIMARY KEY</span></div>
+          <div><span class="text-accent-amber">drive_file_id</span> <span class="text-gray-500">VARCHAR UNIQUE NOT NULL</span></div>
+          <div><span class="text-accent-amber">filename</span> <span class="text-gray-500">VARCHAR NOT NULL</span></div>
+          <div><span class="text-accent-amber">s3_key</span> <span class="text-gray-500">VARCHAR</span></div>
+          <div><span class="text-accent-amber">upload_date</span> <span class="text-gray-500">TIMESTAMPTZ</span></div>
+          <div><span class="text-accent-amber">status</span> <span class="text-gray-500">VARCHAR DEFAULT 'pending'</span></div>
+          <div><span class="text-accent-amber">is_scanned</span> <span class="text-gray-500">BOOLEAN</span></div>
+          <div><span class="text-accent-amber">retry_count</span> <span class="text-gray-500">INT DEFAULT 0</span></div>
+          <div><span class="text-accent-amber">processed_at</span> <span class="text-gray-500">TIMESTAMPTZ</span></div>
+          <div><span class="text-accent-amber">error_msg</span> <span class="text-gray-500">TEXT</span></div>
+        </div>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden border border-dark-border">
+        <div class="h-8 bg-dark-panel border-b border-dark-border px-4 flex items-center">
+          <span class="text-[11px] font-mono text-accent-purple">summaries</span>
+        </div>
+        <div class="p-4 font-mono text-[11px] text-gray-300 space-y-0.5 leading-relaxed">
+          <div><span class="text-accent-amber">id</span> <span class="text-gray-500">UUID PRIMARY KEY</span></div>
+          <div><span class="text-accent-amber">document_id</span> <span class="text-gray-500">UUID REFERENCES documents</span></div>
+          <div><span class="text-accent-amber">exec_summary</span> <span class="text-gray-500">TEXT</span></div>
+          <div><span class="text-accent-amber">key_points</span> <span class="text-gray-500">JSONB</span></div>
+          <div><span class="text-accent-amber">statistics</span> <span class="text-gray-500">JSONB</span></div>
+          <div><span class="text-accent-amber">risks</span> <span class="text-gray-500">JSONB</span></div>
+          <div><span class="text-accent-amber">action_items</span> <span class="text-gray-500">JSONB</span></div>
+          <div><span class="text-accent-amber">important_dates</span> <span class="text-gray-500">JSONB</span></div>
+          <div><span class="text-accent-amber">eval_score</span> <span class="text-gray-500">FLOAT</span></div>
+          <div><span class="text-accent-amber">model_used</span> <span class="text-gray-500">VARCHAR</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Structure -->
+  <div class="space-y-3">
+    <p class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-folder-tree text-brand-500"></i> Generated Project Structure</p>
+    <div class="glass rounded-2xl overflow-hidden border border-dark-border">
+      <div class="h-8 bg-dark-panel border-b border-dark-border px-4 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-gray-400">pdf-summary-agent/</span>
+        <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">Streamed by Architect 2.0</span>
+      </div>
+      <div class="p-4 font-mono text-[11px] text-gray-300 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 leading-relaxed">
+        <div class="text-accent-amber">📁 src/agents/</div>
+        <div class="text-gray-500">📄 requirements.txt</div>
+        <div class="pl-4 text-brand-500">📄 drive_monitor.py</div>
+        <div class="text-gray-500">📄 Dockerfile</div>
+        <div class="pl-4 text-brand-500">📄 doc_processor.py</div>
+        <div class="text-gray-500">📄 docker-compose.yml</div>
+        <div class="pl-4 text-brand-500">📄 analysis_agent.py</div>
+        <div class="text-gray-500">📄 .env.example</div>
+        <div class="pl-4 text-brand-500">📄 summary_agent.py</div>
+        <div class="text-accent-amber">📁 src/tools/</div>
+        <div class="pl-4 text-brand-500">📄 eval_agent.py</div>
+        <div class="pl-4 text-gray-300">📄 google_drive.py</div>
+        <div class="pl-4 text-brand-500">📄 notification_agent.py</div>
+        <div class="pl-4 text-gray-300">📄 ocr_extractor.py</div>
+        <div class="text-accent-amber">📁 src/api/</div>
+        <div class="pl-4 text-gray-300">📄 vector_store.py</div>
+        <div class="pl-4 text-gray-300">📄 routes.py</div>
+        <div class="pl-4 text-gray-300">📄 notifier.py</div>
+        <div class="pl-4 text-gray-300">📄 schemas.py</div>
+        <div class="text-accent-amber">📁 src/db/</div>
+        <div class="text-accent-amber">📁 src/ui/</div>
+        <div class="pl-4 text-gray-300">📄 schema.sql</div>
+        <div class="pl-4 text-gray-300">📄 dashboard.py</div>
+        <div class="pl-4 text-gray-300">📄 models.py</div>
+        <div class="pl-4 text-gray-300">📄 components.py</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ===================== SHARED: ARCHITECTURE DIAGRAM ===================== -->
+<section class="max-w-5xl mx-auto px-6 py-10 space-y-6">
+  <div class="text-center space-y-2">
+    <h2 class="text-2xl font-extrabold text-white">Technical Architecture Diagram</h2>
+    <p class="text-sm text-gray-400">How every service connects — from Google Drive to your inbox</p>
+  </div>
+
+  <div class="glass rounded-2xl p-6 border border-dark-border overflow-x-auto">
+    <!-- Row 1: Trigger Layer -->
+    <div class="space-y-6 min-w-[640px]">
+
+      <!-- Layer label -->
+      <div class="flex items-center space-x-3">
+        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest w-28 shrink-0">Trigger Layer</span>
+        <div class="flex-1 h-px bg-dark-border"></div>
+      </div>
+      <div class="flex items-center justify-center gap-4 -mt-3">
+        <div class="bg-dark-card border border-accent-amber/40 rounded-xl px-4 py-3 text-center space-y-1 w-36">
+          <i class="fa-brands fa-google-drive text-yellow-400 text-lg"></i>
+          <p class="text-[11px] font-bold text-white">Google Drive</p>
+          <p class="text-[10px] text-gray-500">PDF Upload</p>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border"></i>
+        <div class="bg-dark-card border border-accent-emerald/40 rounded-xl px-4 py-3 text-center space-y-1 w-36">
+          <i class="fa-brands fa-aws text-accent-emerald text-lg"></i>
+          <p class="text-[11px] font-bold text-white">EventBridge</p>
+          <p class="text-[10px] text-gray-500">Cron every 15m</p>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border"></i>
+        <div class="bg-dark-card border border-accent-emerald/40 rounded-xl px-4 py-3 text-center space-y-1 w-36">
+          <i class="fa-solid fa-layer-group text-accent-emerald text-lg"></i>
+          <p class="text-[11px] font-bold text-white">SQS Queue</p>
+          <p class="text-[10px] text-gray-500">PDF job buffer</p>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flex justify-center"><div class="w-px h-6 bg-dark-border"></div></div>
+
+      <!-- Layer label -->
+      <div class="flex items-center space-x-3 -mt-3">
+        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest w-28 shrink-0">Agent Layer</span>
+        <div class="flex-1 h-px bg-dark-border"></div>
+      </div>
+
+      <!-- Agent boxes -->
+      <div class="flex items-start justify-center gap-3 -mt-3 flex-wrap">
+        <div class="bg-dark-card border border-accent-rose/40 rounded-xl px-3 py-3 text-center space-y-1 w-28">
+          <i class="fa-solid fa-file-pdf text-accent-rose text-base"></i>
+          <p class="text-[10px] font-bold text-white">Doc Processor</p>
+          <p class="text-[9px] text-gray-500">Textract + PyPDF2</p>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border mt-5"></i>
+        <div class="bg-dark-card border border-accent-cyan/40 rounded-xl px-3 py-3 text-center space-y-1 w-28">
+          <i class="fa-solid fa-magnifying-glass text-accent-cyan text-base"></i>
+          <p class="text-[10px] font-bold text-white">Analysis Agent</p>
+          <p class="text-[9px] text-gray-500">Bedrock Claude</p>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border mt-5"></i>
+        <div class="bg-dark-card border border-accent-purple/40 rounded-xl px-3 py-3 text-center space-y-1 w-28">
+          <i class="fa-solid fa-pen-nib text-accent-purple text-base"></i>
+          <p class="text-[10px] font-bold text-white">Summary Agent</p>
+          <p class="text-[9px] text-gray-500">Bedrock Claude</p>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border mt-5"></i>
+        <div class="bg-dark-card border border-accent-emerald/50 rounded-xl px-3 py-3 text-center space-y-1 w-28 relative">
+          <i class="fa-solid fa-shield-check text-accent-emerald text-base"></i>
+          <p class="text-[10px] font-bold text-white">Eval Agent</p>
+          <p class="text-[9px] text-gray-500">Score ≥ 0.85</p>
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] text-accent-emerald font-mono whitespace-nowrap">↺ retry loop</div>
+        </div>
+        <i class="fa-solid fa-arrow-right text-dark-border mt-5"></i>
+        <div class="bg-dark-card border border-brand-500/40 rounded-xl px-3 py-3 text-center space-y-1 w-28">
+          <i class="fa-solid fa-bell text-brand-500 text-base"></i>
+          <p class="text-[10px] font-bold text-white">Notifier</p>
+          <p class="text-[9px] text-gray-500">SES + Slack</p>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flex justify-center"><div class="w-px h-6 bg-dark-border"></div></div>
+
+      <!-- Layer label -->
+      <div class="flex items-center space-x-3 -mt-3">
+        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest w-28 shrink-0">Data Layer</span>
+        <div class="flex-1 h-px bg-dark-border"></div>
+      </div>
+
+      <div class="flex items-center justify-center gap-4 -mt-3 flex-wrap">
+        <div class="bg-dark-card border border-accent-amber/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-brands fa-aws text-accent-amber text-lg"></i>
+          <p class="text-[11px] font-bold text-white">S3</p>
+          <p class="text-[10px] text-gray-500">PDFs + text</p>
+        </div>
+        <div class="bg-dark-card border border-blue-500/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-solid fa-database text-blue-400 text-lg"></i>
+          <p class="text-[11px] font-bold text-white">RDS Postgres</p>
+          <p class="text-[10px] text-gray-500">Metadata + summaries</p>
+        </div>
+        <div class="bg-dark-card border border-accent-purple/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-solid fa-vector-square text-accent-purple text-lg"></i>
+          <p class="text-[11px] font-bold text-white">OpenSearch</p>
+          <p class="text-[10px] text-gray-500">Vector search</p>
+        </div>
+        <div class="bg-dark-card border border-gray-600/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-solid fa-chart-line text-gray-400 text-lg"></i>
+          <p class="text-[11px] font-bold text-white">CloudWatch</p>
+          <p class="text-[10px] text-gray-500">Logs + metrics</p>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flex justify-center"><div class="w-px h-6 bg-dark-border"></div></div>
+
+      <!-- Layer label -->
+      <div class="flex items-center space-x-3 -mt-3">
+        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest w-28 shrink-0">Output Layer</span>
+        <div class="flex-1 h-px bg-dark-border"></div>
+      </div>
+
+      <div class="flex items-center justify-center gap-4 -mt-3 flex-wrap">
+        <div class="bg-dark-card border border-accent-cyan/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-solid fa-gauge text-accent-cyan text-lg"></i>
+          <p class="text-[11px] font-bold text-white">Dashboard</p>
+          <p class="text-[10px] text-gray-500">Status + search</p>
+        </div>
+        <div class="bg-dark-card border border-accent-rose/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-solid fa-envelope text-accent-rose text-lg"></i>
+          <p class="text-[11px] font-bold text-white">Email (SES)</p>
+          <p class="text-[10px] text-gray-500">Summary delivery</p>
+        </div>
+        <div class="bg-dark-card border border-brand-500/30 rounded-xl px-4 py-3 text-center space-y-1 w-32">
+          <i class="fa-brands fa-slack text-brand-500 text-lg"></i>
+          <p class="text-[11px] font-bold text-white">Slack</p>
+          <p class="text-[10px] text-gray-500">Channel post</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SHARED: END-TO-END FLOW ===================== -->
+<section class="max-w-5xl mx-auto px-6 pb-10 space-y-6">
+  <div class="text-center space-y-2">
+    <h2 class="text-2xl font-extrabold text-white">End-to-End Flow</h2>
+    <p class="text-sm text-gray-400">From PDF upload to summary in your inbox — step by step</p>
+  </div>
+
+  <div class="space-y-3">
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-accent-amber/30 transition">
+      <div class="step-num bg-accent-amber/20 border border-accent-amber/40 text-accent-amber shrink-0">1</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">PDF lands in Google Drive folder</p>
+        <p class="text-[11px] text-gray-400">User or automated system drops a PDF into the monitored Drive folder. Nothing else needed.</p>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-accent-emerald/30 transition">
+      <div class="step-num bg-accent-emerald/20 border border-accent-emerald/40 text-accent-emerald shrink-0">2</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">EventBridge fires → Drive Monitor polls → SQS job queued</p>
+        <p class="text-[11px] text-gray-400">Cron rule triggers every 15 min. Drive Monitor checks for new files, deduplicates against RDS, pushes new file IDs to SQS. ECS Fargate worker picks up the job.</p>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-accent-rose/30 transition">
+      <div class="step-num bg-accent-rose/20 border border-accent-rose/40 text-accent-rose shrink-0">3</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">Document Processing Agent extracts text</p>
+        <p class="text-[11px] text-gray-400">Downloads PDF to S3. Detects if image-based → AWS Textract OCR. Text-based → PyPDF2. Validates extraction quality. Stores raw text back to S3.</p>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-accent-cyan/30 transition">
+      <div class="step-num bg-accent-cyan/20 border border-accent-cyan/40 text-accent-cyan shrink-0">4</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">Analysis Agent identifies what matters</p>
+        <p class="text-[11px] text-gray-400">Chunks text semantically. Embeds via Titan Embed v2 → stores in OpenSearch. Calls Bedrock Claude 3.5 to extract key entities, numbers, risks, action items as structured JSON.</p>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-accent-purple/30 transition">
+      <div class="step-num bg-accent-purple/20 border border-accent-purple/40 text-accent-purple shrink-0">5</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">Summary Agent writes the structured summary</p>
+        <p class="text-[11px] text-gray-400">Uses analysis output as grounding context. Calls Bedrock Claude 3.5 with a structured output schema: exec_summary, key_points, statistics, risks, action_items, important_dates.</p>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-accent-emerald/20 hover:border-accent-emerald/40 transition">
+      <div class="step-num bg-accent-emerald/20 border border-accent-emerald/40 text-accent-emerald shrink-0">6</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">Quality / Eval Agent scores for hallucinations</p>
+        <p class="text-[11px] text-gray-400">Compares summary against source text. Scores faithfulness 0–1. If score &lt; 0.85 and retry_count &lt; 3 → sends critique back to Summary Agent and retries. If score ≥ 0.85 → passes.</p>
+        <div class="flex items-center space-x-2 mt-1">
+          <span class="tag bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">Pass ≥ 0.85 → continue</span>
+          <span class="tag bg-accent-rose/10 text-accent-rose border border-accent-rose/20">Fail &lt; 0.85 → retry (max 3x)</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-start space-x-4 glass rounded-xl p-4 border border-dark-border hover:border-brand-500/30 transition">
+      <div class="step-num bg-brand-500/20 border border-brand-500/40 text-brand-500 shrink-0">7</div>
+      <div class="space-y-1">
+        <p class="text-xs font-bold text-white">Summary saved, notifications sent, dashboard updated</p>
+        <p class="text-[11px] text-gray-400">Summary JSON saved to RDS. Embedded into OpenSearch for search. AWS SES sends email. Slack webhook posts to channel. Document status updated to "completed". CloudWatch logs the full trace.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="border-t border-dark-border bg-dark-panel/60 px-6 py-8 text-center space-y-3">
+  <div class="flex items-center justify-center space-x-2">
+    <div class="w-6 h-6 rounded-md bg-gradient-to-tr from-accent-purple via-brand-500 to-accent-cyan flex items-center justify-center">
+      <i class="fa-solid fa-layer-group text-white text-[10px]"></i>
+    </div>
+    <span class="font-extrabold text-sm text-white">Architect <span class="text-xs px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-500 border border-brand-500/30">2.0</span></span>
+  </div>
+  <p class="text-xs text-gray-500">Built from a single prompt. Deployed in minutes.</p>
+</footer>
+
+<script>
+  function setPersona(p) {
+    document.querySelectorAll('.persona-view').forEach(v => v.classList.add('hidden'));
+    document.querySelectorAll('.persona-tab').forEach(t => {
+      t.classList.remove('active');
+      t.querySelector('.persona-indicator').style.background = '#4b5563';
+    });
+
+    const view = document.getElementById('view-' + p);
+    const btn  = document.getElementById('btn-' + p);
+    if (view) view.classList.remove('hidden');
+    if (btn)  {
+      btn.classList.add('active');
+      btn.querySelector('.persona-indicator').style.background = '#6366f1';
+    }
+
+    // nav buttons
+    document.getElementById('nav-vibe').classList.toggle('border-accent-cyan/50', p === 'nontechnical');
+    document.getElementById('nav-vibe').classList.toggle('text-white', p === 'nontechnical');
+    document.getElementById('nav-code').classList.toggle('border-brand-500/50', p === 'technical');
+    document.getElementById('nav-code').classList.toggle('text-white', p === 'technical');
+  }
+
+  window.onload = () => setPersona('nontechnical');
+</script>
+</body>
+</html>

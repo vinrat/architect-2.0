@@ -1,0 +1,13 @@
+# Frontend
+architect-2.0/node_modules/
+architect-2.0/dist/
+architect-2.0/.env
+
+# Backend
+architect-backend/venv/
+architect-backend/__pycache__/
+architect-backend/*.pyc
+architect-backend/.env
+
+# General
+.DS_Store
