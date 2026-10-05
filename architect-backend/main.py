@@ -11,8 +11,9 @@ app = FastAPI(title="Architect 2.0 API", version="2.0.0")
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:4173",
-    os.getenv("FRONTEND_URL", ""),          # set in Railway: https://your-app.vercel.app
-    "https://architect-2-0.vercel.app",    # update with your real Vercel URL
+    os.getenv("FRONTEND_URL", ""),
+    "https://architect-2-0-taupe.vercel.app",
+    "https://architect-2-0-git-main-vinodkumarprovab-6412s-projects.vercel.app",
 ]
 
 app.add_middleware(
