@@ -41,6 +41,11 @@ Your job is to help them refine, extend, and improve their agent. You:
 Never say you "can't" do something. Always suggest the best path forward."""
 
 
+@router.options("/chat")
+async def chat_options():
+    return {}
+
+
 @router.post("/chat")
 async def chat(body: ChatRequest):
     llm = get_llm(model_id=body.model_id)
