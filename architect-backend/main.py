@@ -8,22 +8,12 @@ load_dotenv()
 
 app = FastAPI(title="Architect 2.0 API", version="2.0.0")
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    os.getenv("FRONTEND_URL", ""),
-    "https://architect-2-0-taupe.vercel.app",
-    "https://architect-2-0-git-main-vinodkumarprovab-6412s-projects.vercel.app",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o for o in ALLOWED_ORIGINS if o],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=600,
 )
 
 app.include_router(synthesize.router, prefix="/api")
@@ -31,6 +21,11 @@ app.include_router(projects.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(analyze_repo.router, prefix="/api")
 app.include_router(clarify.router, prefix="/api")
+
+
+@app.options("/{rest:path}")
+async def preflight(rest: str):
+    return {}
 
 
 @app.get("/health")
